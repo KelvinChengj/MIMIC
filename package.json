@@ -1,0 +1,11 @@
+{
+  "name": "mimic",
+  "version": "0.1.0",
+  "description": "廠務 MIMIC 燈號管理平台（FDM 資料源 · 積木式燈號邏輯）",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test"
+  }
+}
