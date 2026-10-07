@@ -1,4 +1,4 @@
-import { evaluate, lightTags, COLOR_LABEL, COLOR_NAME, OPS, opArgs } from './logic.js';
+import { evaluate, lightTags, describeCond, COLOR_LABEL, COLOR_NAME, OPS, opArgs } from './logic.js';
 
 /* ───────── 小工具 ───────── */
 const STATIC = !!window.MIMIC_STATIC; // 純前端試玩版：網址存在記憶體、不使用 confirm（內嵌框架中會被擋）
@@ -141,16 +141,13 @@ function updateTile(tile, light, values) {
   tile.title = `${COLOR_LABEL[res.color]}｜${res.reason}`;
   const lamp = tile.querySelector('.lamp');
   lamp.setAttribute('aria-label', COLOR_LABEL[res.color]);
-  const rd = tile.querySelector('.readings');
-  if (rd) rd.replaceChildren(...readingLines(light, values));
   return res;
 }
 
 function lightTile(light, values, extra = {}) {
   const tile = h('div', { class: 'tile', 'data-id': light.id, ...extra },
     h('div', { class: 'lamp', role: 'img' }),
-    h('div', { class: 'tile-label' }, light.label || '（未命名）'),
-    h('div', { class: 'readings' }));
+    h('div', { class: 'tile-label' }, light.label || '（未命名）'));
   updateTile(tile, light, values);
   return tile;
 }
@@ -234,7 +231,34 @@ async function pageView(slug) {
   const legendBox = h('div', {});
   const banner = h('div', { class: 'banner', hidden: true }, '無法取得 FDM 資料，所有燈號暫以灰燈顯示。');
   const tiles = new Map();
-  page.lights.forEach((l) => { const t = lightTile(l, {}); tiles.set(l.id, t); grid.append(t); });
+  let lastValues = {}, openId = null;
+  const detail = h('dialog', { class: 'dlg detail-dlg', 'aria-label': '燈號詳情' });
+  detail.addEventListener('click', (e) => { if (e.target === detail) detail.close(); });
+  function paintDetail() {
+    const l = page.lights.find((x) => x.id === openId);
+    if (!l) return;
+    const res = evaluate(l, lastValues);
+    detail.replaceChildren(
+      h('div', { class: `detail-head c-${res.color}` },
+        h('div', { class: 'lamp big' }),
+        h('div', {}, h('h2', {}, l.label || '（未命名）'), h('div', { class: 'pv-title' }, `${COLOR_NAME[res.color]}・${COLOR_LABEL[res.color]}`), h('div', { class: 'muted' }, res.reason)),
+        h('span', { class: 'spacer' }),
+        h('button', { class: 'icon', title: '關閉', 'aria-label': '關閉', onclick: () => detail.close() }, '✕')),
+      h('h3', {}, '目前數值'),
+      lightTags(l).length ? h('div', { class: 'readings detail-readings' }, readingLines(l, lastValues, 50)) : h('p', { class: 'muted' }, '尚未設定資料點'),
+      h('h3', {}, '判斷邏輯'),
+      h('ol', { class: 'rule-list' },
+        l.rules.map((r, i) => h('li', { class: i === res.ruleIndex ? 'hit' : '' },
+          h('span', { class: `chip c-${r.color}` }, h('span', { class: 'lamp-mini' }), COLOR_NAME[r.color]),
+          ` 符合${r.mode === 'all' ? '全部' : '任一'}：`, r.conds.map(describeCond).join(r.mode === 'all' ? ' 且 ' : ' 或 '))),
+        h('li', { class: res.ruleIndex === -1 ? 'hit' : '' }, h('span', { class: `chip c-${l.fallback}` }, h('span', { class: 'lamp-mini' }), COLOR_NAME[l.fallback]), ' 否則')),
+      h('div', { class: 'dlg-actions' }, h('button', { class: 'btn', onclick: () => detail.close() }, '關閉')));
+  }
+  function openDetail(id) { openId = id; paintDetail(); if (!detail.open) detail.showModal(); }
+  page.lights.forEach((l) => {
+    const t = lightTile(l, {}, { class: 'tile clickable', tabIndex: 0, role: 'button', onclick: () => openDetail(l.id), onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(l.id); } } });
+    tiles.set(l.id, t); grid.append(t);
+  });
 
   $app.replaceChildren(h('section', { class: 'wrap' },
     h('div', { class: 'page-head' },
@@ -242,14 +266,16 @@ async function pageView(slug) {
       h('div', { class: 'head-actions' },
         h('button', { class: 'btn', onclick: () => { document.body.classList.add('tv'); document.documentElement.requestFullscreen?.().catch(() => {}); } }, '看板模式'),
         h('a', { class: 'btn primary', href: `/p/${slug}/edit`, 'data-link': true }, '編輯積木'))),
-    banner, legendBox,
+    banner, legendBox, detail,
     page.lights.length ? grid : h('div', { class: 'empty' }, h('h3', {}, '這個頁面還沒有燈號'), h('a', { class: 'btn primary', href: `/p/${slug}/edit`, 'data-link': true }, '開始編輯'))));
 
   const exitTv = (e) => { if (e.key === 'Escape') document.body.classList.remove('tv'); };
   document.addEventListener('keydown', exitTv);
 
   const stop = startPolling(() => [...new Set(page.lights.flatMap(lightTags))], (values, p) => {
+    lastValues = values;
     page.lights.forEach((l) => updateTile(tiles.get(l.id), l, values));
+    if (detail.open) paintDetail();
     legendBox.replaceChildren(legend(summarize(page.lights, values)));
     banner.hidden = !p.failed;
     stamp.textContent = fmtTime();
