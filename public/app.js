@@ -306,7 +306,7 @@ async function editorView(slug) {
   const page = await api(`/pages/${slug}`);
   const draft = structuredClone({ title: page.title, lights: page.lights });
   let saved = JSON.stringify(draft);
-  let selectedId = draft.lights[0]?.id ?? null;
+  let selectedId = null;
   let values = {};
   document.title = `編輯 ${page.title}｜MIMIC`;
   setCrumbs({ text: '頁面', href: '/' }, { text: page.title, href: `/p/${slug}` }, { text: '編輯' });
@@ -334,16 +334,28 @@ async function editorView(slug) {
   /* 畫布：燈號積木 */
   function addLight() {
     const l = { id: uid(), label: `燈號 ${draft.lights.length + 1}`, fallback: 'green', rules: [] };
-    draft.lights.push(l); selectedId = l.id; renderCanvas(); renderLogic(); touch();
+    draft.lights.push(l); renderCanvas(); openLogic(l.id); touch();
+  }
+  function openLogic(id) {
+    selectedId = id; renderCanvas(); renderLogic();
+    if (!logicDlg.open) logicDlg.showModal();
+  }
+  function addRule() {
+    const light = selected();
+    if (!light) return;
+    light.rules.push({ id: uid(), color: 'red', mode: 'any', conds: [{ tag: '', op: '>', value: null, value2: null }] });
+    renderLogic(); touch();
+    [...logic.querySelectorAll('.blk.rule')].pop()?.querySelector('.tag')?.focus();
   }
   function renderCanvas() {
     canvas.replaceChildren(...draft.lights.map((l, i) => {
       const handle = h('span', { class: 'grip', title: '拖曳排序' }, '⋮⋮');
-      const tile = lightTile(l, values, { class: 'tile editable' + (l.id === selectedId ? ' selected' : ''), tabIndex: 0, onclick: () => { selectedId = l.id; renderCanvas(); renderLogic(); } });
+      const tile = lightTile(l, values, { class: 'tile editable' + (l.id === selectedId ? ' selected' : ''), tabIndex: 0, onclick: () => openLogic(l.id), onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) openLogic(l.id); } });
       tile.classList.toggle('selected', l.id === selectedId);
       tile.append(h('div', { class: 'tile-tools' }, handle,
-        h('button', { class: 'icon', title: '複製', onclick: (e) => { e.stopPropagation(); const c = structuredClone(l); c.id = uid(); c.label += ' 複本'; draft.lights.splice(i + 1, 0, c); selectedId = c.id; renderCanvas(); renderLogic(); touch(); } }, '⧉'),
-        h('button', { class: 'icon', title: '刪除', onclick: (e) => { e.stopPropagation(); if (l.rules.length && !confirm(`刪除燈號「${l.label}」？`)) return; draft.lights.splice(i, 1); if (selectedId === l.id) selectedId = draft.lights[0]?.id ?? null; renderCanvas(); renderLogic(); touch(); } }, '✕')));
+        h('button', { class: 'icon', title: '編輯邏輯', onclick: (e) => { e.stopPropagation(); openLogic(l.id); } }, '✎'),
+        h('button', { class: 'icon', title: '複製', onclick: (e) => { e.stopPropagation(); const c = structuredClone(l); c.id = uid(); c.label += ' 複本'; draft.lights.splice(i + 1, 0, c); renderCanvas(); touch(); } }, '⧉'),
+        h('button', { class: 'icon', title: '刪除', onclick: (e) => { e.stopPropagation(); if (l.rules.length && !confirm(`刪除燈號「${l.label}」？`)) return; draft.lights.splice(i, 1); if (selectedId === l.id) selectedId = null; renderCanvas(); touch(); } }, '✕')));
       makeSortable(tile, handle, 'light', i, (from, to) => { reorder(draft.lights, from, to); renderCanvas(); touch(); }, true);
       return tile;
     }).concat(draft.lights.length ? [] : [h('div', { class: 'canvas-empty' }, '把左邊的「燈號」積木拖到這裡，或直接點擊它')]));
@@ -353,9 +365,7 @@ async function editorView(slug) {
   /* 邏輯面板：規則積木 */
   function renderLogic() {
     const light = selected();
-    if (!light) { logic.replaceChildren(h('div', { class: 'logic-empty' }, '選擇一個燈號，在這裡用積木編輯它的判斷邏輯。')); return; }
-
-    const addRule = () => { light.rules.push({ id: uid(), color: 'red', mode: 'any', conds: [{ tag: '', op: '>', value: null, value2: null }] }); renderLogic(); touch(); };
+    if (!light) { logic.replaceChildren(); return; }
     const stack = h('div', { class: 'stack' });
     stack.append(
       h('div', { class: 'blk hat' }, h('b', {}, '當 FDM 資料更新時')),
@@ -426,14 +436,30 @@ async function editorView(slug) {
         h('div', { class: 'readings' }, readingLines(light, values, 8))));
   }
 
+  /* 燈號邏輯編輯視窗（彈跳） */
+  const logicDlg = h('dialog', { class: 'dlg logic-dlg', 'aria-label': '編輯燈號邏輯' },
+    h('div', { class: 'ldlg-head' },
+      h('h2', {}, '編輯燈號邏輯'), h('span', { class: 'spacer' }),
+      h('button', { class: 'icon', title: '關閉', 'aria-label': '關閉', onclick: () => logicDlg.close() }, '✕')),
+    h('div', { class: 'ldlg-body' },
+      h('aside', { class: 'ldlg-pal' },
+        h('div', { class: 'pal-cap' }, '邏輯積木庫'),
+        paletteBlock('p-rule', '如果…就亮…', '一組條件 + 結果顏色（拖入或點擊）', 'new-rule', addRule)),
+      logic),
+    h('div', { class: 'ldlg-foot' },
+      h('span', { class: 'muted' }, '變更會即時反映在畫布，記得儲存頁面。'), h('span', { class: 'spacer' }),
+      h('button', { class: 'btn', onclick: save }, '儲存頁面'),
+      h('button', { class: 'btn primary', onclick: () => logicDlg.close() }, '完成')));
+  logicDlg.addEventListener('click', (e) => { if (e.target === logicDlg) logicDlg.close(); });
+  logicDlg.addEventListener('close', () => renderCanvas());
+
   /* 版面 */
   const palette = h('aside', { class: 'palette' },
     h('h3', {}, '積木庫'),
     h('p', { class: 'muted' }, '拖曳到右側，或直接點擊'),
     h('div', { class: 'pal-group' }, h('div', { class: 'pal-cap' }, '頁面積木'),
       paletteBlock('p-light', '燈號', '顯示紅／黃／綠／灰的狀態燈', 'new-light', addLight)),
-    h('div', { class: 'pal-group' }, h('div', { class: 'pal-cap' }, '燈號邏輯積木'),
-      paletteBlock('p-rule', '如果…就亮…', '一組條件 + 結果顏色', 'new-rule', () => { if (!selected()) return toast('請先選擇一個燈號'); logic.querySelector('.add-rule').click(); })),
+    h('p', { class: 'muted small' }, '點擊畫布上的燈號，會彈出視窗，用邏輯積木編輯它的判斷規則。'),
     h('div', { class: 'pal-legend' },
       ['red', 'yellow', 'green', 'gray'].map((c) => h('div', { class: `legend-item c-${c}` }, h('span', { class: 'dot' }), `${COLOR_NAME[c]}・${COLOR_LABEL[c]}`))));
 
@@ -443,11 +469,10 @@ async function editorView(slug) {
       h('a', { class: 'btn', href: `/p/${slug}`, 'data-link': true }, '檢視'), saveBtn),
     h('div', { class: 'editor-grid' },
       palette,
-      h('section', { class: 'panel' }, h('h3', {}, '頁面畫布'), canvas),
-      h('section', { class: 'panel' }, h('h3', {}, '燈號邏輯'), logic)),
-    dl));
+      h('section', { class: 'panel' }, h('h3', {}, '頁面畫布'), canvas)),
+    dl, logicDlg));
 
-  renderCanvas(); renderLogic();
+  renderCanvas();
   const onKey = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); save(); } };
   document.addEventListener('keydown', onKey);
   const stop = startPolling(() => [...new Set(draft.lights.flatMap(lightTags))], (v) => { values = v; refreshLive(); });

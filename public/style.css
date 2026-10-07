@@ -103,7 +103,7 @@ body.tv .lamp { width: 100px; height: 100px; }
 .title-input { font-size: 20px; font-weight: 700; background: transparent; border-color: transparent; width: min(380px, 100%); }
 .title-input:hover { border-color: var(--line); }
 .dirty { color: var(--yellow); font-size: 13px; }
-.editor-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr) minmax(380px, 460px); gap: 16px; align-items: start; }
+.editor-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 16px; align-items: start; }
 .palette, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
 .palette { display: grid; gap: 14px; position: sticky; top: 68px; }
 .panel h3, .palette h3 { font-size: 15px; margin-bottom: 12px; }
@@ -136,7 +136,17 @@ body.tv .lamp { width: 100px; height: 100px; }
 .stack .drop-after { box-shadow: 0 4px 0 var(--accent); }
 
 /* 邏輯積木（Scratch 風格的堆疊積木） */
-.logic { display: grid; gap: 12px; }
+.logic { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.small { font-size: 12.5px; margin: 0; }
+.logic-dlg { width: min(980px, 95vw); max-height: 90vh; padding: 0; overflow: hidden; }
+.logic-dlg[open] { display: flex; flex-direction: column; }
+.ldlg-head, .ldlg-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
+.ldlg-head { border-bottom: 1px solid var(--line); }
+.ldlg-head h2 { font-size: 18px; }
+.ldlg-foot { border-top: 1px solid var(--line); background: var(--panel); }
+.ldlg-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; padding: 18px 20px; overflow-y: auto; flex: 1; align-items: start; }
+.ldlg-pal { position: sticky; top: 0; display: grid; gap: 6px; }
+@media (max-width: 700px) { .ldlg-body { grid-template-columns: 1fr; } .ldlg-pal { position: static; } }
 .logic-empty { color: var(--muted); padding: 30px 6px; text-align: center; }
 .logic-hint { font-size: 13px; color: var(--muted); }
 .logic-hint b { color: var(--text); }
