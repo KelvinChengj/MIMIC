@@ -1,6 +1,8 @@
 import { evaluate, lightTags, COLOR_LABEL, COLOR_NAME, OPS, opArgs } from './logic.js';
 
 /* ───────── 小工具 ───────── */
+const STATIC = !!window.MIMIC_STATIC; // 純前端試玩版：網址存在記憶體、不使用 confirm（內嵌框架中會被擋）
+const ask = (msg) => (STATIC ? true : confirm(msg));
 const $app = document.getElementById('app');
 const $crumbs = document.getElementById('crumbs');
 const uid = () => Math.random().toString(36).slice(2, 8);
@@ -79,9 +81,12 @@ function startPolling(getTags, onData) {
 
 /* ───────── 路由 ───────── */
 let current = null; // { dispose?, dirty? }
+let memPath = '/';
+const getPath = () => (STATIC ? memPath : location.pathname);
 async function navigate(url, { replace = false, force = false } = {}) {
-  if (!force && current?.dirty?.() && !confirm('有尚未儲存的變更，確定離開？')) return;
-  if (replace) history.replaceState(null, '', url); else history.pushState(null, '', url);
+  if (!force && current?.dirty?.() && !ask('有尚未儲存的變更，確定離開？')) return;
+  if (STATIC) memPath = url;
+  else if (replace) history.replaceState(null, '', url); else history.pushState(null, '', url);
   await render();
 }
 document.addEventListener('click', (e) => {
@@ -101,7 +106,7 @@ async function render() {
   current?.dispose?.();
   current = null;
   document.body.classList.remove('tv');
-  const path = location.pathname.replace(/\/+$/, '') || '/';
+  const path = getPath().replace(/\/+$/, '') || '/';
   const m = path.match(/^\/p\/([^/]+)(\/edit)?$/);
   try {
     await loadTags();
@@ -175,7 +180,7 @@ async function homeView() {
       h('div', { class: 'card-actions' },
         h('a', { class: 'btn small', href: `/p/${p.slug}/edit`, 'data-link': true }, '編輯'),
         h('button', { class: 'btn small danger', onclick: async () => {
-          if (!confirm(`刪除頁面「${p.title}」？此動作無法復原。`)) return;
+          if (!ask(`刪除頁面「${p.title}」？此動作無法復原。`)) return;
           await api(`/pages/${p.slug}`, { method: 'DELETE' });
           toast('已刪除'); navigate('/', { replace: true, force: true });
         } }, '刪除')))),
@@ -211,7 +216,7 @@ function createPageDialog() {
     } },
       h('h2', {}, '新增 MIMIC 頁面'),
       h('label', {}, '頁面名稱', title),
-      h('label', {}, '網址代稱', h('div', { class: 'slug-row' }, h('span', { class: 'muted' }, `${location.origin}/p/`), slug)),
+      h('label', {}, '網址代稱', h('div', { class: 'slug-row' }, h('span', { class: 'muted' }, STATIC ? '/p/' : `${location.origin}/p/`), slug)),
       h('div', { class: 'dlg-actions' },
         h('button', { type: 'button', class: 'btn', onclick: () => dlg.close() }, '取消'),
         h('button', { type: 'submit', class: 'btn primary' }, '建立並編輯'))));
@@ -233,7 +238,7 @@ async function pageView(slug) {
 
   $app.replaceChildren(h('section', { class: 'wrap' },
     h('div', { class: 'page-head' },
-      h('div', {}, h('h1', {}, page.title), h('p', { class: 'muted' }, h('code', {}, location.pathname), '　更新於 ', stamp)),
+      h('div', {}, h('h1', {}, page.title), h('p', { class: 'muted' }, h('code', {}, getPath()), '　更新於 ', stamp)),
       h('div', { class: 'head-actions' },
         h('button', { class: 'btn', onclick: () => { document.body.classList.add('tv'); document.documentElement.requestFullscreen?.().catch(() => {}); } }, '看板模式'),
         h('a', { class: 'btn primary', href: `/p/${slug}/edit`, 'data-link': true }, '編輯積木'))),
@@ -355,7 +360,7 @@ async function editorView(slug) {
       tile.append(h('div', { class: 'tile-tools' }, handle,
         h('button', { class: 'icon', title: '編輯邏輯', onclick: (e) => { e.stopPropagation(); openLogic(l.id); } }, '✎'),
         h('button', { class: 'icon', title: '複製', onclick: (e) => { e.stopPropagation(); const c = structuredClone(l); c.id = uid(); c.label += ' 複本'; draft.lights.splice(i + 1, 0, c); renderCanvas(); touch(); } }, '⧉'),
-        h('button', { class: 'icon', title: '刪除', onclick: (e) => { e.stopPropagation(); if (l.rules.length && !confirm(`刪除燈號「${l.label}」？`)) return; draft.lights.splice(i, 1); if (selectedId === l.id) selectedId = null; renderCanvas(); touch(); } }, '✕')));
+        h('button', { class: 'icon', title: '刪除', onclick: (e) => { e.stopPropagation(); if (l.rules.length && !ask(`刪除燈號「${l.label}」？`)) return; draft.lights.splice(i, 1); if (selectedId === l.id) selectedId = null; renderCanvas(); touch(); } }, '✕')));
       makeSortable(tile, handle, 'light', i, (from, to) => { reorder(draft.lights, from, to); renderCanvas(); touch(); }, true);
       return tile;
     }).concat(draft.lights.length ? [] : [h('div', { class: 'canvas-empty' }, '把左邊的「燈號」積木拖到這裡，或直接點擊它')]));

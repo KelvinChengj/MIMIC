@@ -27,6 +27,14 @@ npm test
   - 編輯時以即時 FDM 數值預覽結果；`Ctrl/⌘+S` 儲存。
 - **看板模式**：檢視頁的「看板模式」隱藏頂欄（Esc 離開），每 5 秒自動更新。
 
+## 純前端試玩版（免後端）
+
+```bash
+node scripts/build-demo.mjs   # 輸出 dist-demo/，用任何靜態伺服器開啟 index.html
+```
+
+試玩版以 `public/static-backend.js` 在瀏覽器內模擬 API，資料存在 localStorage，與伺服器版共用 `public/shared/`。
+
 ## 接上真實 FDM
 
 預設使用內建模擬資料。設定環境變數即切換為真實資料源：
@@ -46,7 +54,7 @@ FDM_API_URL=https://fdm.example.com/api FDM_API_TOKEN=xxx npm start
 server/index.js    HTTP 伺服器 + REST API（頁面 CRUD、FDM 代理）
 server/fdm.js      FDM 資料源轉接層（模擬 / 真實）
 server/store.js    頁面設定儲存（data/pages.json；可換成資料庫）
-server/validate.js 頁面設定驗證與淨化
+public/shared/     範例資料、頁面驗證、模擬 FDM（伺服器與試玩版共用）
 public/logic.js    燈號判斷邏輯（純函式，已單元測試）
 public/app.js      SPA：頁面清單 / 檢視 / 積木編輯器
 ```

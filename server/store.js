@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { seedPages } from './seed.js';
+import { seedPages } from '../public/shared/seed.js';
 
 const DATA_FILE = process.env.MIMIC_DATA || join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'pages.json');
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;

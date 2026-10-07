@@ -4,7 +4,7 @@ import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as store from './store.js';
 import * as fdm from './fdm.js';
-import { validatePage } from './validate.js';
+import { validatePage } from '../public/shared/validate.js';
 
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const PORT = Number(process.env.PORT) || 3000;
