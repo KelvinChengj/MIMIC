@@ -139,15 +139,32 @@ body.tv .tile-label { font-size: 15px; }
 /* 邏輯積木（Scratch 風格的堆疊積木） */
 .logic { display: grid; gap: 12px; min-width: 0; align-content: start; }
 .small { font-size: 12.5px; margin: 0; }
-.logic-dlg { width: min(980px, 95vw); max-height: 90vh; padding: 0; overflow: hidden; }
+.logic-dlg { width: min(1500px, 94vw); height: 90vh; max-height: none; padding: 0; overflow: hidden; }
 .logic-dlg[open] { display: flex; flex-direction: column; }
-.ldlg-head, .ldlg-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
+.ldlg-head, .ldlg-foot { display: flex; align-items: center; gap: 10px; padding: 16px 28px; }
 .ldlg-head { border-bottom: 1px solid var(--line); }
-.ldlg-head h2 { font-size: 18px; }
+.ldlg-head h2 { font-size: 20px; }
 .ldlg-foot { border-top: 1px solid var(--line); background: var(--panel); }
-.ldlg-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; padding: 18px 20px; overflow-y: auto; flex: 1; align-items: start; }
-.ldlg-pal { position: sticky; top: 0; display: grid; gap: 6px; }
-@media (max-width: 700px) { .ldlg-body { grid-template-columns: 1fr; } .ldlg-pal { position: static; } }
+.ldlg-body { display: grid; grid-template-columns: 230px minmax(0, 1fr) 340px; gap: 28px; padding: 24px 28px; overflow-y: auto; flex: 1; align-items: start; min-height: 0; }
+.ldlg-pal, .ldlg-side { position: sticky; top: 0; display: grid; gap: 8px; }
+.ldlg-side .preview { flex-direction: column; }
+.ldlg-side .readings { font-size: 14px; gap: 6px; }
+/* 視窗內的積木放大，方便閱讀與操作 */
+.logic-dlg .logic { max-width: 920px; width: 100%; margin: 0 auto; gap: 14px; }
+.logic-dlg .blk { font-size: 15px; padding: 12px 16px; }
+.logic-dlg .blk.cond { padding: 10px 12px; }
+.logic-dlg input, .logic-dlg select { font-size: 15px; padding: 8px 11px; }
+.logic-dlg .cond-row { flex-wrap: nowrap; }
+.logic-dlg .cond-row .tag { flex: 1 1 220px; font-size: 15px; }
+.logic-dlg .cond-row select { flex: 0 0 130px; font-size: 15px; }
+.logic-dlg .cond-row .num { width: 100px; font-size: 15px; }
+.logic-dlg .cond-meta { font-size: 13px; }
+.logic-dlg .rule-head, .logic-dlg .rule-foot { font-size: 16px; }
+.logic-dlg .cdot { font-size: 15px; padding: 5px 14px 5px 8px; }
+.logic-dlg .lamp-mini { width: 16px; height: 16px; }
+.logic-dlg .logic-hint { font-size: 14px; }
+@media (max-width: 1180px) { .ldlg-body { grid-template-columns: 200px minmax(0, 1fr); } .ldlg-side { grid-column: 1 / -1; position: static; } }
+@media (max-width: 700px) { .logic-dlg { width: 100vw; height: 96vh; } .ldlg-body { grid-template-columns: 1fr; padding: 16px; } .ldlg-pal { position: static; } .logic-dlg .cond-row { flex-wrap: wrap; } .ldlg-head, .ldlg-foot { padding: 12px 16px; } }
 .logic-empty { color: var(--muted); padding: 30px 6px; text-align: center; }
 .logic-hint { font-size: 13px; color: var(--muted); }
 .logic-hint b { color: var(--text); }

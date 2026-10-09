@@ -411,8 +411,7 @@ async function editorView(slug) {
         h('label', {}, '燈號名稱', h('input', { type: 'text', value: light.label, maxLength: 40, oninput: (e) => { light.label = e.target.value; canvas.querySelector(`[data-id="${light.id}"] .tile-label`).textContent = e.target.value || '（未命名）'; touch(); } }))),
       h('div', { class: 'logic-hint' }, '規則由上而下判斷，', h('b', {}, '第一個成立'), '的規則決定燈號顏色。'),
       stack,
-      h('button', { class: 'btn add-rule', onclick: addRule }, '＋ 加入「如果…就亮…」積木'),
-      h('div', { class: 'preview', id: 'preview' }));
+      h('button', { class: 'btn add-rule', onclick: addRule }, '＋ 加入「如果…就亮…」積木'));
     refreshLive();
   }
 
@@ -476,7 +475,10 @@ async function editorView(slug) {
       h('aside', { class: 'ldlg-pal' },
         h('div', { class: 'pal-cap' }, '邏輯積木庫'),
         paletteBlock('p-rule', '如果…就亮…', '一組條件 + 結果顏色（拖入或點擊）', 'new-rule', addRule)),
-      logic),
+      logic,
+      h('aside', { class: 'ldlg-side' },
+        h('div', { class: 'pal-cap' }, '即時預覽（使用目前 FDM 數值）'),
+        h('div', { class: 'preview', id: 'preview' }))),
     h('div', { class: 'ldlg-foot' },
       h('span', { class: 'muted' }, '變更會即時反映在畫布，記得儲存頁面。'), h('span', { class: 'spacer' }),
       h('button', { class: 'btn', onclick: save }, '儲存頁面'),
