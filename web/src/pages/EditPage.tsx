@@ -8,6 +8,8 @@ import { STATUS_META, describeRules, evaluateSystem, formatValue, tileText, vali
 import { cloneMetricRules, defaultRulesFor, useRules } from '../state/RulesContext';
 import { useFdm } from '../state/FdmContext';
 import { useUi } from '../state/UiContext';
+import { useUserPages } from '../state/UserPagesContext';
+import { UserPageView } from './UserPageView';
 import type { MetricRule, RulesConfig, Status, SystemDef, SystemRules } from '../types';
 
 type Field = keyof MetricRule;
@@ -40,6 +42,8 @@ interface TestResult {
 
 export function EditRoute() {
   const { slug = '' } = useParams();
+  const userPage = useUserPages().getPage(slug);
+  if (userPage) return <UserPageView page={userPage} edit />;
   const page = pageBySlug(slug);
   if (!page?.scope) return <NotFound what="可編輯的頁面" />;
   return <EditView slug={slug} title={page.title} systemIds={page.scope.systems} siteIds={page.scope.sites} />;

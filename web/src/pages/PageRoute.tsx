@@ -2,12 +2,16 @@ import { useParams } from 'react-router-dom';
 import { Dot, StatusBadge } from '../components/Lamp';
 import { BackButton, NotFound, PageHeader } from '../components/PageParts';
 import { pageBySlug } from '../catalog/catalog';
+import { useUserPages } from '../state/UserPagesContext';
 import { DrillView } from './DrillPage';
+import { UserPageView } from './UserPageView';
 import { WallPage } from './WallPage';
 
 /** /p/:slug：依頁面設定決定顯示燈號牆、單一系統下鑽，或示意頁 */
 export function PageRoute() {
   const { slug = '' } = useParams();
+  const userPage = useUserPages().getPage(slug);
+  if (userPage) return <UserPageView page={userPage} edit={false} />;
   const page = pageBySlug(slug);
   if (!page) return <NotFound />;
 

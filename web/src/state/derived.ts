@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
+import { buildValueGetter, evaluateBlock } from '../lib/blocks';
+import { useUserPages } from './UserPagesContext';
 import { SYSTEMS, systemById } from '../catalog/catalog';
 import { evaluateSystem, worstOf } from '../lib/status';
-import type { PageDef, Status } from '../types';
+import { pageBySlug } from '../catalog/catalog';
+import type { PageDef, Status, UserBlock } from '../types';
 import { useFdm } from './FdmContext';
 import { useRules } from './RulesContext';
 
@@ -34,4 +37,43 @@ export function usePageStatus() {
       return worstOf(statuses);
     };
   }, [snapshot, rules]);
+}
+
+export function useValueGetter() {
+  const { snapshot } = useFdm();
+  return useMemo(() => buildValueGetter(snapshot), [snapshot]);
+}
+
+/** 以目前 FDM 數值判定自建積木的燈號 */
+export function useBlockEvaluator() {
+  const getter = useValueGetter();
+  return useMemo(() => (b: UserBlock) => evaluateBlock(b, getter), [getter]);
+}
+
+export interface ResolvedPage {
+  slug: string;
+  title: string;
+  status: Status;
+  user: boolean;
+}
+
+/** 側欄用：不論是內建頁面或自建頁面，都用 slug 取得標題與整體燈號 */
+export function useResolvePage() {
+  const { getPage } = useUserPages();
+  const pageStatus = usePageStatus();
+  const evalBlock = useBlockEvaluator();
+  return useMemo(
+    () =>
+      (slug: string): ResolvedPage | null => {
+        const up = getPage(slug);
+        if (up) {
+          // 空白頁面沒有任何燈號，顯示灰色
+          const status = worstOf(up.blocks.length ? up.blocks.map((b) => evalBlock(b).status) : ['gray']);
+          return { slug, title: up.title, status, user: true };
+        }
+        const page = pageBySlug(slug);
+        return page ? { slug, title: page.title, status: pageStatus(page), user: false } : null;
+      },
+    [getPage, pageStatus, evalBlock],
+  );
 }

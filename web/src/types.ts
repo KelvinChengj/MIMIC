@@ -90,3 +90,31 @@ export interface PageDef {
   /** 出現在 Explore 搜尋結果 */
   explore?: boolean;
 }
+
+/** 使用者自建頁面上的燈號積木 */
+export interface BlockVar {
+  /** 算式中使用的名稱：A、B、C… */
+  name: string;
+  site?: string;
+  tag?: string;
+}
+export interface UserBlock {
+  id: string;
+  title: string;
+  x: number;
+  y: number;
+  vars: BlockVar[];
+  /** 顯示值算式（可空白）。例：(A + B) / 2 */
+  valueExpr: string;
+  unit: string;
+  /** 紅燈條件。例：A > 3 or B < 17.5 */
+  redExpr: string;
+  /** 黃燈條件；紅燈不成立時才判斷 */
+  yellowExpr: string;
+}
+export interface UserPage {
+  slug: string;
+  title: string;
+  blocks: UserBlock[];
+  createdAt: number;
+}

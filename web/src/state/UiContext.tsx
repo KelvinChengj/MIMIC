@@ -8,6 +8,10 @@ interface UiValue {
   kiosk: boolean;
   enterKiosk: () => void;
   exitKiosk: () => void;
+  /** 「新增頁面」對話框；groupId 為預選分類 */
+  newPage: { groupId?: string } | null;
+  openNewPage: (groupId?: string) => void;
+  closeNewPage: () => void;
   toast: string | null;
   showToast: (msg: string) => void;
 }
@@ -16,6 +20,9 @@ const Ctx = createContext<UiValue | null>(null);
 export function UiProvider({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setCollapsed] = usePersistentState('mimic.sidebar.collapsed', false);
   const [kiosk, setKiosk] = useState(false);
+  const [newPage, setNewPage] = useState<{ groupId?: string } | null>(null);
+  const openNewPage = useCallback((groupId?: string) => setNewPage({ groupId }), []);
+  const closeNewPage = useCallback(() => setNewPage(null), []);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number>();
 
@@ -50,8 +57,8 @@ export function UiProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, toast, showToast }),
-    [sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, toast, showToast],
+    () => ({ sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, toast, showToast }),
+    [sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, toast, showToast],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

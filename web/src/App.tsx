@@ -9,6 +9,7 @@ import { FavoritesProvider } from './state/FavoritesContext';
 import { FdmProvider } from './state/FdmContext';
 import { RulesProvider } from './state/RulesContext';
 import { UiProvider } from './state/UiContext';
+import { UserPagesProvider } from './state/UserPagesContext';
 
 /** 單一檔案的線上 Demo 沒有伺服器可做路徑 fallback，改用 #/ 形式的網址 */
 const Router = import.meta.env.VITE_HASH ? HashRouter : BrowserRouter;
@@ -20,6 +21,7 @@ export default function App() {
         <FdmProvider>
           <RulesProvider>
             <FavoritesProvider>
+              <UserPagesProvider>
               <Routes>
                 <Route element={<Layout />}>
                   <Route index element={<Navigate to="/p/overview" replace />} />
@@ -30,6 +32,7 @@ export default function App() {
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
+              </UserPagesProvider>
             </FavoritesProvider>
           </RulesProvider>
         </FdmProvider>

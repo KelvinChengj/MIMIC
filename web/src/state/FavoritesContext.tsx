@@ -1,11 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { newId } from '../lib/blocks';
+import * as fav from '../lib/favorites';
+import type { FavGroup } from '../lib/favorites';
 import { usePersistentState } from './storage';
 
-export interface FavGroup {
-  id: string;
-  name: string;
-  slugs: string[];
-}
+export type { FavGroup };
 
 const EXPLORE_GROUP = 'explore';
 
@@ -22,48 +21,51 @@ const DEFAULT_GROUPS: FavGroup[] = [
 interface FavValue {
   groups: FavGroup[];
   isFavorite: (slug: string) => boolean;
+  /** Explore 的 ☆：加入「我的收藏」或從任何分類移除 */
   toggleFavorite: (slug: string) => void;
-  /** 同一群組內拖曳排序 */
-  reorder: (groupId: string, from: number, to: number) => void;
+  addGroup: (name: string) => string;
+  renameGroup: (id: string, name: string) => void;
+  deleteGroup: (id: string) => void;
+  moveGroup: (id: string, beforeId: string | null) => void;
+  nudgeGroup: (id: string, dir: -1 | 1) => void;
+  movePage: (slug: string, toGroupId: string, beforeSlug: string | null) => void;
+  nudgePage: (slug: string, dir: -1 | 1) => void;
+  addSlug: (groupId: string, slug: string) => void;
+  removeSlug: (slug: string) => void;
 }
 const Ctx = createContext<FavValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = usePersistentState<FavGroup[]>('mimic.favorites.v1', DEFAULT_GROUPS);
 
-  const isFavorite = useCallback((slug: string) => groups.some((g) => g.slugs.includes(slug)), [groups]);
-
-  const toggleFavorite = useCallback(
-    (slug: string) =>
-      setGroups((prev) => {
-        if (prev.some((g) => g.slugs.includes(slug))) {
-          // 移除；空的「Explore 加入」群組一併收掉，其他群組保留
-          return prev
-            .map((g) => ({ ...g, slugs: g.slugs.filter((s) => s !== slug) }))
-            .filter((g) => g.slugs.length > 0 || g.id !== EXPLORE_GROUP);
-        }
-        const existing = prev.find((g) => g.id === EXPLORE_GROUP);
-        if (existing) return prev.map((g) => (g === existing ? { ...g, slugs: [...g.slugs, slug] } : g));
-        return [...prev, { id: EXPLORE_GROUP, name: '我的收藏', slugs: [slug] }];
-      }),
-    [setGroups],
-  );
-
-  const reorder = useCallback(
-    (groupId: string, from: number, to: number) =>
-      setGroups((prev) =>
-        prev.map((g) => {
-          if (g.id !== groupId || from === to || to < 0 || to >= g.slugs.length) return g;
-          const slugs = [...g.slugs];
-          const [moved] = slugs.splice(from, 1);
-          slugs.splice(to, 0, moved);
-          return { ...g, slugs };
+  const value = useMemo<FavValue>(() => {
+    const apply = (fn: (g: FavGroup[]) => FavGroup[]) => setGroups((prev) => fn(prev));
+    return {
+      groups,
+      isFavorite: (slug) => groups.some((g) => g.slugs.includes(slug)),
+      toggleFavorite: (slug) =>
+        apply((prev) => {
+          if (prev.some((g) => g.slugs.includes(slug)))
+            return fav.removeSlug(prev, slug).filter((g) => g.slugs.length > 0 || g.id !== EXPLORE_GROUP);
+          const base = prev.some((g) => g.id === EXPLORE_GROUP) ? prev : fav.addGroup(prev, EXPLORE_GROUP, '我的收藏');
+          return fav.addSlug(base, EXPLORE_GROUP, slug);
         }),
-      ),
-    [setGroups],
-  );
+      addGroup: (name) => {
+        const id = newId('g');
+        apply((prev) => fav.addGroup(prev, id, name));
+        return id;
+      },
+      renameGroup: (id, name) => apply((p) => fav.renameGroup(p, id, name)),
+      deleteGroup: (id) => apply((p) => fav.deleteGroup(p, id)),
+      moveGroup: (id, before) => apply((p) => fav.moveGroup(p, id, before)),
+      nudgeGroup: (id, dir) => apply((p) => fav.nudgeGroup(p, id, dir)),
+      movePage: (slug, to, before) => apply((p) => fav.movePage(p, slug, to, before)),
+      nudgePage: (slug, dir) => apply((p) => fav.nudgePage(p, slug, dir)),
+      addSlug: (gid, slug) => apply((p) => fav.addSlug(p, gid, slug)),
+      removeSlug: (slug) => apply((p) => fav.removeSlug(p, slug)),
+    };
+  }, [groups, setGroups]);
 
-  const value = useMemo(() => ({ groups, isFavorite, toggleFavorite, reorder }), [groups, isFavorite, toggleFavorite, reorder]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
@@ -72,3 +74,4 @@ export function useFavorites() {
   if (!v) throw new Error('useFavorites 必須在 FavoritesProvider 內使用');
   return v;
 }
+
