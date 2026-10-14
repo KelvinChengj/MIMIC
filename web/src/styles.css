@@ -446,10 +446,6 @@ button.chip:hover { background: #eef3f8; border-color: #8aa4c0; }
 .pv .mini-table td:nth-child(2) { overflow-wrap: anywhere; }
 .pv .mini-table td:nth-child(2) code { display: block; font-size: 12.5px; }
 
-@media (max-width: 960px) {
-  .be { grid-template-columns: 1fr; }
-  .be__preview { position: static; }
-}
 
 .be__valrow .ef--unit { width: 110px; flex: none; }
 .title-input { field-sizing: content; }
@@ -601,3 +597,20 @@ button.chip:hover { background: #eef3f8; border-color: #8aa4c0; }
 .seg--wrap { flex-wrap: wrap; }
 .be__zoom { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
 .be__stage > div { width: max-content; }
+
+/* ═════ 編輯對話框：預覽 + 尺寸切換 ═════ */
+.be__pinhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.be__pinhead h3 { margin: 0 !important; }
+.be__sizerow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.be__preview { display: flex; flex-direction: column; max-height: calc(min(820px, 100vh - 48px) - 150px); }
+.be__pin { flex: none; }
+.be__explain { margin-top: 12px; flex: 1; min-height: 0; overflow: auto; }
+.be__stage { margin-bottom: 0; }
+@media (max-width: 960px) {
+  .be { grid-template-columns: 1fr; gap: 16px; }
+  /* 預覽區跑到最上面並固定，捲動表單時仍看得到燈號的變化 */
+  .be__preview { display: contents; max-height: none; }
+  .be__pin { order: -1; position: sticky; top: -20px; z-index: 6; margin: -20px -22px 0; padding: 12px 22px 12px; background: #f8f7f5; border-bottom: 1px solid var(--line); box-shadow: 0 6px 12px -8px rgba(31, 41, 51, 0.25); }
+  .be__form { order: 0; }
+  .be__explain { order: 1; margin-top: 0; overflow: visible; background: #f8f7f5; border-radius: 12px; padding: 14px 16px; }
+}
