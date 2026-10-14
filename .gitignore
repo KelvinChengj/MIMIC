@@ -1,4 +1,11 @@
 node_modules/
+dist/
+*.local
+.DS_Store
 data/
 .env
+.env.*
+!.env.example
 dist-demo/
+*.tsbuildinfo
+.pnpm-store/

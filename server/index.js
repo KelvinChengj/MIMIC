@@ -1,12 +1,17 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { extname, join, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as store from './store.js';
 import * as fdm from './fdm.js';
 import { validatePage } from '../public/shared/validate.js';
 
-const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+// Build the React app first; the original interface remains available via MIMIC_PUBLIC_DIR=public.
+const PUBLIC = process.env.MIMIC_PUBLIC_DIR
+  ? join(ROOT, process.env.MIMIC_PUBLIC_DIR)
+  : existsSync(join(ROOT, 'dist', 'index.html')) ? join(ROOT, 'dist') : join(ROOT, 'public');
 const PORT = Number(process.env.PORT) || 3000;
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',

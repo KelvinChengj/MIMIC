@@ -47,7 +47,7 @@ test('FDM 資料點與數值', async () => {
 
 test('SPA 路由回傳 index.html，且擋路徑穿越', async () => {
   const r = await fetch(base + '/p/demo/edit');
-  assert.match(await r.text(), /<main id="app">/);
+  assert.match(await r.text(), /<(?:main id="app"|div id="root")>/);
   const t = await fetch(base + '/..%2f..%2fpackage.json');
   assert.notEqual(t.status, 200);
 });

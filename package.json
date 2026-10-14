@@ -1,11 +1,28 @@
 {
-  "name": "mimic",
-  "version": "0.1.0",
-  "description": "廠務 MIMIC 燈號管理平台（FDM 資料源 · 積木式燈號邏輯）",
-  "type": "module",
+  "name": "mimic-facilities",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test"
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run src && node --test test/*.test.js",
+    "build:legacy": "node scripts/build-demo.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.2",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
   }
 }
