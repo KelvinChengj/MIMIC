@@ -69,6 +69,7 @@ export const summaryBlock: BlockDefinition<SummaryProps> = {
   type: 'summary',
   label: '系統摘要',
   description: '某廠區某系統的整體燈號，附紅黃綠判定規則說明。',
+  inLibrary: false, // 目前只給內建頁面使用，先不開放使用者自己新增
   category: '燈號',
   icon: <SummaryIcon />,
   defaultProps: () => ({ site: SITES[0].id, system: SYSTEMS[0].id }),

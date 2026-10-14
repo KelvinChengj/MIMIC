@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { registerBuiltinBlocks } from './index';
 import { blockLibrary, createBlock, footprintOf, getBlockDef, listBlockDefs, normalizeBlock, registerBlock } from './registry';
 import { evaluateLamp } from '../lib/blocks';
+import { SCALE } from './layout';
 import { fetchSnapshot } from '../lib/fdm';
 import { buildValueGetter } from '../lib/blocks';
 import { defaultRules } from '../state/RulesContext';
@@ -17,14 +18,17 @@ const env = (): BlockEnv => {
 
 describe('積木庫 registry', () => {
   it('內建五種積木都已註冊', () => {
-    expect(listBlockDefs().map((d) => d.type)).toEqual(['lamp', 'wall', 'summary', 'tags', 'text']);
+    expect(listBlockDefs().map((d) => d.type).slice(0, 5)).toEqual(['lamp', 'wall', 'summary', 'tags', 'text']);
   });
-  it('依分類分組，保持註冊順序', () => {
+  it('積木庫目前只開放「燈號」與「文字」；燈號牆、系統摘要、Tag 清單仍註冊但不開放使用者新增', () => {
     expect(blockLibrary().map((g) => [g.category, g.items.map((d) => d.type)])).toEqual([
-      ['燈號', ['lamp', 'wall', 'summary']],
-      ['資料', ['tags']],
+      ['燈號', ['lamp']],
       ['版面', ['text']],
     ]);
+    for (const t of ['wall', 'summary', 'tags']) {
+      expect(getBlockDef(t)).toBeDefined();
+      expect(getBlockDef(t)!.inLibrary).toBe(false);
+    }
   });
   it('重複註冊同一種類會丟錯', () => {
     expect(() => registerBlock(getBlockDef('lamp') as BlockDefinition<unknown>)).toThrow();
@@ -39,6 +43,8 @@ describe('積木庫 registry', () => {
     const b = createBlock('test-counter', []);
     expect(b).toMatchObject({ type: 'test-counter', title: '測試 1', size: 'M', props: { n: 1 } });
     expect(blockLibrary().some((g) => g.category === '測試')).toBe(true);
+    registerBlock({ ...def, type: 'test-hidden', category: '隱藏', inLibrary: false });
+    expect(blockLibrary().some((g) => g.category === '隱藏')).toBe(false);
   });
   it('createBlock：預設尺寸、依序命名、不重疊', () => {
     const a = createBlock('lamp', []);
@@ -52,15 +58,15 @@ describe('積木庫 registry', () => {
     expect(() => createBlock('nope', [])).toThrow();
     expect(footprintOf({ id: 'x', type: 'nope', title: '', size: 'M', x: 0, y: 0, props: {} }).w).toBeGreaterThan(0);
   });
-  it('燈號積木三種尺寸大小遞增', () => {
+  it('燈號積木 小 : 中 : 大 = 1 : 2 : 4（長與寬）', () => {
     const lamp = createBlock('lamp', []);
-    const w = (['S', 'M', 'L'] as const).map((size) => footprintOf({ ...lamp, size }));
-    expect(w[0].w).toBeLessThan(w[1].w);
-    expect(w[1].w).toBeLessThan(w[2].w);
-    expect(w[0].h).toBeLessThan(w[2].h);
+    const [s, m, l] = (['S', 'M', 'L'] as const).map((size) => footprintOf({ ...lamp, size }));
+    expect([m.w / s.w, l.w / s.w]).toEqual([2, 4]);
+    expect([m.h / s.h, l.h / s.h]).toEqual([2, 4]);
+    expect(SCALE).toEqual({ S: 1, M: 2, L: 4 });
   });
   it('各積木種類的三種尺寸都有合理的佔用大小', () => {
-    for (const d of listBlockDefs().filter((x) => x.type !== 'test-counter')) {
+    for (const d of listBlockDefs().filter((x) => !x.type.startsWith('test-'))) {
       const base: PageBlock = { ...createBlock(d.type, []) };
       for (const size of ['S', 'M', 'L'] as const) {
         const f = d.footprint({ ...base, size });

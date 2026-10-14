@@ -101,6 +101,9 @@ export interface BlockVar {
   tag?: string;
 }
 
+/** 燈號下方文字：auto＝有顯示值就顯示數值、否則狀態；status＝只顯示狀態文字；both＝兩者都顯示 */
+export type LampCaption = 'auto' | 'status' | 'both';
+
 /** 「燈號積木」(type: 'lamp') 的內容 */
 export interface LampProps {
   vars: BlockVar[];
@@ -111,6 +114,10 @@ export interface LampProps {
   redExpr: string;
   /** 黃燈條件；紅燈不成立時才判斷 */
   yellowExpr: string;
+  /** 燈號下方文字怎麼顯示（舊資料沒有這個欄位，視為 auto） */
+  caption?: LampCaption;
+  /** 自訂各燈號的狀態文字，空白＝用預設（異常 / 部分異常 / 正常） */
+  labels?: Partial<Record<'red' | 'yellow' | 'green', string>>;
 }
 
 /**

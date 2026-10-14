@@ -84,6 +84,7 @@ export const tagsBlock: BlockDefinition<TagsProps> = {
   type: 'tags',
   label: 'Tag 清單',
   description: '某系統所有 Tag 的名稱、說明與數值，依嚴重程度排序。',
+  inLibrary: false, // 目前只給內建頁面使用，先不開放使用者自己新增
   category: '資料',
   icon: <TagsIcon />,
   defaultProps: () => ({ site: SITES[0].id, system: SYSTEMS[0].id, filter: 'abnormal' }),

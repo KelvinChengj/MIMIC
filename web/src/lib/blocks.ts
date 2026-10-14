@@ -54,7 +54,14 @@ export interface VarState {
   name: string;
   tag?: TagInfo;
   value: number | null;
+  /** FDM 的真實數值（不受模擬值影響） */
+  real: number | null;
+  /** 這個值是編輯時手動填的模擬值，不是 FDM 的真實數值 */
+  simulated: boolean;
 }
+
+/** 以資料點名稱（A、B…）覆蓋數值，用來在編輯時試算；null＝模擬無資料 */
+export type Overrides = Record<string, number | null>;
 
 export interface BlockResult {
   /** 紅 / 黃 / 綠；無資料、未設定、算式有誤時為灰 */
@@ -72,10 +79,12 @@ export interface BlockResult {
 
 const LABELS: Record<Status, string> = { red: '異常', yellow: '部分異常', green: '正常', gray: '' };
 
-export function evaluateLamp(block: LampProps, getValue: ValueGetter): BlockResult {
+export function evaluateLamp(block: LampProps, getValue: ValueGetter, overrides: Overrides = {}): BlockResult {
   const vars: VarState[] = block.vars.map((v) => {
     const tag = v.site && v.tag ? TAG_BY_KEY.get(tagKey(v.site, v.tag)) : undefined;
-    return { name: v.name, tag, value: tag ? getValue(tag.siteId, tag.name) : null };
+    const simulated = Object.prototype.hasOwnProperty.call(overrides, v.name);
+    const real = tag ? getValue(tag.siteId, tag.name) : null;
+    return { name: v.name, tag, simulated, real, value: simulated ? overrides[v.name] : real };
   });
   const env: Env = Object.fromEntries(vars.map((v) => [v.name, v.value]));
   const red = run(block.redExpr, env, 'bool');
@@ -104,7 +113,7 @@ export function evaluateLamp(block: LampProps, getValue: ValueGetter): BlockResu
   if (red.state === 'empty' && yellow.state === 'empty') return gray('unset', '尚未設定', '尚未設定燈號條件');
 
   const done = (status: Status, message: string): BlockResult => ({
-    ...base, status, reason: 'ok', label: LABELS[status], message,
+    ...base, status, reason: 'ok', label: block.labels?.[status as 'red' | 'yellow' | 'green']?.trim() || LABELS[status], message,
   });
   if (red.state === 'ok' && red.value === true) return done('red', `紅燈條件成立：${red.traced}`);
   if (red.state === 'nodata') return gray('nodata', '無資料', `資料點 ${red.varName} 目前無資料`);

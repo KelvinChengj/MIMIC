@@ -4,6 +4,13 @@ export const GRID = 10;
 export const SIZE_LABEL: Record<BlockSize, string> = { S: '小', M: '中', L: '大' };
 export const SIZES: BlockSize[] = ['S', 'M', 'L'];
 
+/**
+ * 小 : 中 : 大 = 1 : 2 : 4（長與寬都按這個倍率放大）。
+ * 燈號積木的外框、燈號圖示、文字都由這個倍率推出；
+ * 要改比例只要改這裡。
+ */
+export const SCALE: Record<BlockSize, 1 | 2 | 4> = { S: 1, M: 2, L: 4 };
+
 export interface Footprint {
   w: number;
   h: number;

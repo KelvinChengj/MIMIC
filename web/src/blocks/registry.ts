@@ -17,10 +17,13 @@ export function registerBlock<P>(def: BlockDefinition<P>) {
 export const getBlockDef = (type: string) => defs.get(type);
 export const listBlockDefs = () => [...defs.values()];
 
-/** 積木庫分組（保持註冊順序） */
+/** 積木庫分組（保持註冊順序；inLibrary: false 的積木不列出） */
 export function blockLibrary(): { category: string; items: BlockDefinition<any>[] }[] {
   const groups = new Map<string, BlockDefinition<any>[]>();
-  for (const d of defs.values()) groups.set(d.category, [...(groups.get(d.category) ?? []), d]);
+  for (const d of defs.values()) {
+    if (d.inLibrary === false) continue;
+    groups.set(d.category, [...(groups.get(d.category) ?? []), d]);
+  }
   return [...groups].map(([category, items]) => ({ category, items }));
 }
 

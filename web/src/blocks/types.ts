@@ -45,6 +45,13 @@ export interface BlockDefinition<P = unknown> {
   /** 新增時的預設名稱；n 是頁面上同種積木的序號 */
   defaultTitle: (n: number) => string;
   defaultSize?: BlockSize;
+  /**
+   * false＝不出現在積木庫（使用者無法自己新增），但仍可註冊給內建頁面使用。
+   * 預設 true。
+   */
+  inLibrary?: boolean;
+  /** 選填：包住整個編輯對話框的 Provider（編輯器、預覽、判斷過程共用的暫時狀態，例如模擬值） */
+  EditorProvider?: ComponentType<{ children: ReactNode }>;
   /** 名稱欄位對這種積木沒意義時設為 true（例如文字積木本身就是內容） */
   titleless?: boolean;
   /** true：畫布上高度固定等於 footprint.h（燈號磚塊）；否則高度跟著內容 */

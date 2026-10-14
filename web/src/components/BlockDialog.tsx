@@ -1,3 +1,4 @@
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { BlockRender } from '../blocks/BlockView';
 import { footprintOf, getBlockDef } from '../blocks/registry';
 import type { BlockHost } from '../blocks/types';
@@ -11,11 +12,26 @@ const HOST: BlockHost = { drillBase: 'overview' };
 function Stage({ block }: { block: PageBlock }) {
   const def = getBlockDef(block.type);
   const fp = footprintOf(block);
+  const ref = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  // 大尺寸比預覽區還寬時等比縮小，才看得到整顆積木
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => setZoom(Math.min(1, Math.max(0.2, (el.clientWidth - 40) / fp.w)));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fp.w]);
   return (
-    <div className="be__stage">
-      <div className="cb cb--static" style={{ width: fp.w, height: def?.fixedHeight ? fp.h : undefined }}>
-        <div className="cb__body"><BlockRender block={block} mode="canvas" host={HOST} /></div>
+    <div className="be__stage" ref={ref} data-zoom={zoom.toFixed(2)}>
+      <div style={{ zoom }}>
+        <div className="cb cb--static" style={{ width: fp.w, height: def?.fixedHeight ? fp.h : undefined }}>
+          <div className="cb__body"><BlockRender block={block} mode="canvas" host={HOST} /></div>
+        </div>
       </div>
+      {zoom < 1 && <p className="be__zoom">預覽縮小為 {Math.round(zoom * 100)}%</p>}
     </div>
   );
 }
@@ -30,7 +46,9 @@ export function BlockDialog({ block, onChange, onClose }: {
   if (!def) return null;
   const { Editor, Explain } = def;
   const fp = footprintOf(block);
+  const Provider = def.EditorProvider ?? Fragment;
   return (
+    <Provider>
     <Modal
       title={`編輯${def.label}積木`}
       size="xl"
@@ -66,6 +84,7 @@ export function BlockDialog({ block, onChange, onClose }: {
         </aside>
       </div>
     </Modal>
+    </Provider>
   );
 }
 

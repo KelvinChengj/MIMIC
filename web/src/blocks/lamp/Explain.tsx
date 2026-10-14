@@ -3,6 +3,7 @@ import { Dot } from '../../components/Lamp';
 import type { LampProps, PageBlock } from '../../types';
 import { fmtNum } from '../../lib/expr';
 import { useLampResult } from './LampBlock';
+import { useLampSim } from './sim';
 
 const runText = (r: RunResult, kind: 'cond' | 'value' = 'cond'): string => {
   if (r.state === 'empty') return '未設定';
@@ -15,6 +16,8 @@ const runText = (r: RunResult, kind: 'cond' | 'value' = 'cond'): string => {
 /** 判斷過程：資料點目前數值、紅黃條件代入數值後的結果、哪一顆在亮 */
 export function LampExplain({ block }: { block: PageBlock<LampProps> }) {
   const result = useLampResult(block.props);
+  const sim = useLampSim();
+  const simulating = result.vars.filter((v) => v.simulated);
   const p = block.props;
   const row = (dot: 'red' | 'yellow' | 'green', title: string, body: string, on: boolean) => (
     <li className={on ? 'is-decisive' : ''}>
@@ -25,6 +28,12 @@ export function LampExplain({ block }: { block: PageBlock<LampProps> }) {
   );
   return (
     <div className="pv">
+      {simulating.length > 0 && (
+        <p className="pv__sim" role="status">
+          <b>模擬中</b>：{simulating.map((v) => `${v.name} = ${v.value == null ? '無資料' : v.value}`).join('、')}（只在這個視窗試算，不會存檔）
+          <button className="link-btn" onClick={() => sim.clear()}>清除</button>
+        </p>
+      )}
       <p className="pv__msg">{result.message}</p>
 
       <h4>資料點目前數值</h4>
@@ -37,7 +46,7 @@ export function LampExplain({ block }: { block: PageBlock<LampProps> }) {
               <tr key={v.name}>
                 <td><span className="chip chip--var">{v.name}</span></td>
                 <td>{v.tag ? <><code>{v.tag.name}</code><small>{v.tag.siteName} · {v.tag.desc}</small></> : <small>尚未選擇</small>}</td>
-                <td className="num">{v.value == null ? '—' : v.value.toFixed(v.tag?.decimals ?? 2)}{v.tag?.unit && v.value != null ? ` ${v.tag.unit}` : ''}</td>
+                <td className={`num ${v.simulated ? 'is-sim' : ''}`}>{v.value == null ? '—' : v.value.toFixed(v.tag?.decimals ?? 2)}{v.tag?.unit && v.value != null ? ` ${v.tag.unit}` : ''}{v.simulated && <small>模擬值</small>}</td>
               </tr>
             ))}
           </tbody>
