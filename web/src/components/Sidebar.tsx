@@ -3,7 +3,6 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useResolvePage } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
-import { Dot } from './Lamp';
 import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
 
 type Drag = { kind: 'page'; slug: string } | { kind: 'group'; id: string };
@@ -11,6 +10,12 @@ type Drop =
   | { kind: 'item'; slug: string; after: boolean }
   | { kind: 'group-end'; id: string }
   | { kind: 'group'; id: string; after: boolean };
+
+/** 窄欄裡代表頁面的字：標題的第一個中文字，沒有中文就用第一個字母 */
+const railMark = (title: string) => {
+  const cjk = [...title].find((c) => c.charCodeAt(0) > 0x2e80);
+  return (cjk ?? title.trim()[0] ?? '?').toUpperCase();
+};
 
 const isTopHalf = (e: DragEvent<HTMLElement>) => {
   const r = e.currentTarget.getBoundingClientRect();
@@ -70,7 +75,7 @@ export function Sidebar() {
                 if (!page) return null;
                 return (
                   <NavLink key={slug} to={`/p/${slug}`} className={`rail-item ${isActive(slug) ? 'is-active' : ''}`} title={page.title} aria-label={page.title}>
-                    <Dot status={page.status} />
+                    <span className="rail-item__mark" aria-hidden="true">{railMark(page.title)}</span>
                   </NavLink>
                 );
               })}
@@ -238,7 +243,6 @@ export function Sidebar() {
                               <button className="icon-btn icon-btn--xs" onClick={(e) => { e.preventDefault(); fav.nudgePage(slug, -1); }} aria-label={`上移「${page.title}」`} title="上移"><ChevronUp size={14} /></button>
                               <button className="icon-btn icon-btn--xs" onClick={(e) => { e.preventDefault(); fav.nudgePage(slug, 1); }} aria-label={`下移「${page.title}」`} title="下移"><ChevronDown size={14} /></button>
                             </span>
-                            <Dot status={page.status} />
                           </Link>
                         </li>
                       );

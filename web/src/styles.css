@@ -619,3 +619,7 @@ button.chip:hover { background: #eef3f8; border-color: #8aa4c0; }
 .canvas:not(.canvas--edit) .canvas__inner { background-image: none; }
 
 .cb--edit:hover .cb__size, .cb.is-selected .cb__size { display: grid; }
+
+/* 側欄不顯示小燈號；窄欄用頁面名稱的第一個字 */
+.rail-item__mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: #eeece9; color: #3d4650; font-size: 13px; font-weight: 700; }
+.rail-item.is-active .rail-item__mark { background: var(--primary); color: #fff; }
