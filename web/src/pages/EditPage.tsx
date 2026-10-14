@@ -111,8 +111,9 @@ function EditView({ slug, title, systemIds, siteIds }: { slug: string; title: st
     showToast('已儲存燈號門檻');
     navigate(`/p/${slug}`);
   };
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const cancel = () => {
-    if (dirtyIds.length && !window.confirm('有尚未儲存的變更，確定要離開嗎？')) return;
+    if (dirtyIds.length && !confirmLeave) return setConfirmLeave(true);
     back();
   };
 
@@ -131,7 +132,9 @@ function EditView({ slug, title, systemIds, siteIds }: { slug: string; title: st
         sub="設定黃、紅燈門檻，按 Test 以目前 FDM 數值試算"
         actions={
           <>
-            <button className="btn" onClick={cancel}>Cancel</button>
+            <button className={`btn ${confirmLeave ? 'btn--danger' : ''}`} onClick={cancel} onBlur={() => setConfirmLeave(false)}>
+              {confirmLeave ? '放棄未儲存的變更？' : 'Cancel'}
+            </button>
             <button className="btn btn--primary" onClick={save} disabled={hasError || anyInvalidElsewhere || dirtyIds.length === 0}>
               Save{dirtyIds.length > 0 && ` (${dirtyIds.length})`}
             </button>

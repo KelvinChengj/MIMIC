@@ -308,3 +308,5 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
   .spin, .toast { animation: none; }
   .tile { transition: none; }
 }
+
+.btn--danger { border-color: var(--red); color: var(--red); background: var(--red-bg); }
