@@ -1,3 +1,6 @@
+import { SITES, SYSTEMS } from '../../catalog/catalog';
+import { describeRules, formatValue } from '../../lib/status';
+import { useCell } from '../../state/derived';
 import type { RunResult } from '../../lib/expr';
 import { Dot } from '../../components/Lamp';
 import type { LampProps, PageBlock } from '../../types';
@@ -13,8 +16,43 @@ const runText = (r: RunResult, kind: 'cond' | 'value' = 'cond'): string => {
   return kind === 'value' ? `${r.traced} = ${fmtNum(r.value)}` : `${r.traced} → ${r.value}`;
 };
 
+/** 系統燈號：列出該系統的判定規則與有問題的 Tag */
+function SystemExplain({ block }: { block: PageBlock<LampProps> }) {
+  const { site: siteId, system: systemId } = block.props.source!;
+  const cell = useCell(siteId, systemId);
+  const site = SITES.find((s) => s.id === siteId);
+  const sys = SYSTEMS.find((s) => s.id === systemId);
+  if (!cell || !sys) return <p className="pv__none">找不到這個廠區或系統。</p>;
+  const bad = cell.tags.filter((t) => t.status === 'red' || t.status === 'yellow');
+  return (
+    <div className="pv">
+      <p className="pv__msg">{site?.label} · {sys.name} {sys.short}：紅 {cell.summary.red}、黃 {cell.summary.yellow}、灰 {cell.summary.gray}，共 {cell.summary.total} 個 Tag</p>
+      <h4>判定規則（系統共用，可在「門檻設定」調整）</h4>
+      <ul className="pv__steps">
+        {describeRules(sys, cell.rules).map((l) => (
+          <li key={l.status} className={cell.summary.status === l.status ? 'is-decisive' : ''}>
+            <Dot status={l.status} /><div><span>{l.text}</span></div>{cell.summary.status === l.status && <em>目前</em>}
+          </li>
+        ))}
+      </ul>
+      <h4>有問題的 Tag（{bad.length}）</h4>
+      {bad.length === 0 ? <p className="pv__none">目前沒有。</p> : (
+        <table className="mini-table"><tbody>
+          {bad.map((t) => (
+            <tr key={t.name}><td><Dot status={t.status} /></td><td><code>{t.name}</code><small>{t.desc}</small></td><td className="num">{formatValue(t.value, t.metricDef?.decimals ?? 1)}</td></tr>
+          ))}
+        </tbody></table>
+      )}
+    </div>
+  );
+}
+
 /** 判斷過程：資料點目前數值、紅黃條件代入數值後的結果、哪一顆在亮 */
 export function LampExplain({ block }: { block: PageBlock<LampProps> }) {
+  return block.props.source ? <SystemExplain block={block} /> : <CustomExplain block={block} />;
+}
+
+function CustomExplain({ block }: { block: PageBlock<LampProps> }) {
   const result = useLampResult(block.props);
   const sim = useLampSim();
   const simulating = result.vars.filter((v) => v.simulated);

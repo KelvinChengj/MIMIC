@@ -12,8 +12,8 @@ export interface BlockEnv {
 
 /** 積木所在的頁面環境 */
 export interface BlockHost {
-  /** 下鑽連結要掛在哪個內建頁面底下（/p/<drillBase>/<廠區>/<系統>） */
-  drillBase: string;
+  /** 某廠區 × 某系統的下鑽網址 */
+  drillTo: (siteId: string, systemId: string) => string;
 }
 
 export interface RenderProps<P> {
@@ -64,6 +64,8 @@ export interface BlockDefinition<P = unknown> {
   Editor: ComponentType<EditorProps<P>>;
   /** 選填：判斷過程說明（顯示在預覽下方；有這個的積木在檢視頁點擊會開啟說明） */
   Explain?: ComponentType<{ block: PageBlock<P> }>;
+  /** 選填：這顆積木在檢視頁點了是否開啟 Explain（預設有 Explain 就開）；自己會處理點擊（例如下鑽）的積木回傳 false */
+  explainable?: (block: PageBlock<P>) => boolean;
   /** 選填：這顆積木對整頁燈號（側欄圓點）的貢獻；沒有燈號意義的積木不用寫 */
   status?: (block: PageBlock<P>, env: BlockEnv) => Status | null;
 }

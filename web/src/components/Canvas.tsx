@@ -39,7 +39,8 @@ function BlockFrame({ block, host, edit, selected, onSelect, onOpen, onMove, onR
   const x = pos?.x ?? block.x;
   const y = pos?.y ?? block.y;
   // 檢視頁：只有有「判斷過程」的積木（燈號）點了會開啟說明；其他積木自己處理點擊
-  const clickable = edit || !!def?.Explain;
+  const explainable = !!def?.Explain && (def.explainable?.(block) ?? true);
+  const clickable = edit || explainable;
   const name = `${block.title || def?.label || '積木'}（${def?.label ?? '未知'}・${SIZE_LABEL[block.size]}）`;
 
   const down = (e: PointerEvent<HTMLDivElement>) => {
@@ -89,7 +90,7 @@ function BlockFrame({ block, host, edit, selected, onSelect, onOpen, onMove, onR
       onPointerCancel={() => { drag.current = null; setPos(null); }}
       onFocus={edit ? onSelect : undefined}
       onDoubleClick={edit ? onOpen : undefined}
-      onClick={edit || !def?.Explain ? undefined : onOpen}
+      onClick={edit || !explainable ? undefined : onOpen}
       onKeyDown={key}
     >
       <div className="cb__body"><BlockRender block={block} mode="canvas" host={host} /></div>
@@ -152,7 +153,9 @@ export function Canvas({ blocks, edit, host, empty, onOpen, onMove, onResize, on
     <div className={`canvas ${edit ? 'canvas--edit' : ''}`} aria-label={edit ? '畫布（編輯中）' : '畫布'}>
       <div
         className="canvas__inner"
-        style={{ minWidth: ext.w + 120, minHeight: Math.max(ext.h + 160, 440) }}
+        style={edit || blocks.length === 0
+          ? { minWidth: ext.w + 120, minHeight: Math.max(ext.h + 160, 440) }
+          : { minWidth: ext.w + 24, minHeight: ext.h + 24 }}
       >
         {blocks.map((b) => (
           <BlockFrame

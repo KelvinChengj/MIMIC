@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { SITES, SYSTEMS } from '../../catalog/catalog';
 import { PlusIcon, TrashIcon } from '../../components/Icons';
+import { SiteSystemSelect } from '../SiteSystemFields';
 import { conditionsFromRules, nextVarName } from '../../lib/blocks';
 import { lintLamp } from '../../lib/lampLint';
 import { useRules } from '../../state/RulesContext';
@@ -65,8 +68,36 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
   };
   const setLabel = (k: 'red' | 'yellow' | 'green', v: string) => onProps({ labels: { ...(p.labels ?? {}), [k]: v } });
 
+  const source = p.source;
+  const setSource = (mode: 'custom' | 'system') =>
+    onProps({ source: mode === 'system' ? (source ?? { site: SITES[0].id, system: SYSTEMS[0].id }) : undefined });
+
+  const picker = (
+    <section className="be__sec" aria-labelledby="sec-source">
+      <h3 id="sec-source">資料來源 <small>自己用資料點與算式判斷，或直接顯示某個系統的整體燈號</small></h3>
+      <div className="seg seg--wrap" role="radiogroup" aria-label="資料來源">
+        <button role="radio" aria-checked={!source} className={!source ? 'is-on' : ''} onClick={() => setSource('custom')}>自訂算式</button>
+        <button role="radio" aria-checked={!!source} className={source ? 'is-on' : ''} onClick={() => setSource('system')}>系統燈號</button>
+      </div>
+    </section>
+  );
+
+  if (source) {
+    return (
+      <>
+        {picker}
+        <SiteSystemSelect site={source.site} system={source.system} onChange={(patch) => onProps({ source: { ...source, ...(patch.site ? { site: patch.site } : {}), ...(patch.system ? { system: patch.system } : {}) } })} />
+        <p className="be__note">
+          燈號與下方文字（例如「3 台異常」）由這個系統的紅、黃、綠判定規則決定，點燈號會下鑽到 Tag 清單。
+          要調整門檻，到 <Link to={`/p/overview/thresholds?system=${source.system}`}>門檻設定</Link>。
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
+      {picker}
       {notes.length > 0 && (
         <ul className="lint" aria-label="檢查提醒">
           {notes.map((n) => <li key={n.text} className={`lint--${n.level}`}>{n.level === 'warn' ? '⚠' : 'ℹ'} {n.text}</li>)}

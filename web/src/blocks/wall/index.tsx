@@ -19,7 +19,7 @@ const TILE: Record<BlockSize, { w: number; h: number }> = { S: { w: 64, h: 54 },
 const HEAD_W = 96;
 const GAP = 12;
 
-function WallTile({ base, siteId, systemId, size }: { base: string; siteId: string; systemId: string; size: BlockSize }) {
+function WallTile({ to, siteId, systemId, size }: { to: string; siteId: string; systemId: string; size: BlockSize }) {
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId)!;
   if (!cell) return <div className="tile tile--gray" />;
@@ -27,7 +27,7 @@ function WallTile({ base, siteId, systemId, size }: { base: string; siteId: stri
   const text = tileText(summary, rules.staleMinutes);
   return (
     <StatusTile
-      to={`/p/${base}/${siteId}/${systemId}`}
+      to={to}
       status={summary.status}
       size={size}
       text={size === 'S' ? undefined : text}
@@ -63,7 +63,7 @@ function WallRender({ block, mode, host }: RenderProps<WallProps>) {
             <Fragment key={site.id}>
               <div className="wall__rowhead">{block.size === 'S' ? site.name : site.label}</div>
               {systems.map((sys) => (
-                <WallTile key={sys.id} base={host.drillBase} siteId={site.id} systemId={sys.id} size={block.size} />
+                <WallTile key={sys.id} to={host.drillTo(site.id, sys.id)} siteId={site.id} systemId={sys.id} size={block.size} />
               ))}
             </Fragment>
           ))}

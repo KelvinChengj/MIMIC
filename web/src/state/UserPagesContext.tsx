@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { builtinLayoutPage } from '../blocks/builtin';
 import { nextFreePosition, snap } from '../blocks/layout';
 import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
 import { newId } from '../lib/blocks';
@@ -11,6 +12,8 @@ interface UserPagesValue {
   createPage: (title: string) => string;
   renamePage: (slug: string, title: string) => void;
   deletePage: (slug: string) => void;
+  /** 內建頁面：丟掉使用者改過的版面，回到預設 */
+  resetLayout: (slug: string) => void;
   addBlock: (slug: string, type: string) => string;
   updateBlock: (slug: string, id: string, patch: Partial<PageBlock>) => void;
   moveBlock: (slug: string, id: string, x: number, y: number) => void;
@@ -25,20 +28,27 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
   const pages = useMemo(() => stored.map((p) => ({ ...p, blocks: p.blocks.map(normalizeBlock) })), [stored]);
 
   const value = useMemo<UserPagesValue>(() => {
+    // 內建頁面（燈號牆）第一次被修改時，才把預設版面存進來
     const patchPage = (slug: string, fn: (p: UserPage) => UserPage) =>
-      setPages((prev) => prev.map((p) => (p.slug === slug ? fn(p) : p)));
+      setPages((prev) => {
+        if (prev.some((p) => p.slug === slug)) return prev.map((p) => (p.slug === slug ? fn(p) : p));
+        const seed = builtinLayoutPage(slug);
+        return seed ? [...prev, fn(seed)] : prev;
+      });
+    const find = (slug: string) => pages.find((p) => p.slug === slug) ?? builtinLayoutPage(slug);
     return {
       pages,
-      getPage: (slug) => pages.find((p) => p.slug === slug),
+      getPage: find,
       createPage: (title) => {
         const slug = newId('u');
         setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now() }]);
         return slug;
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),
-      deletePage: (slug) => setPages((prev) => prev.filter((p) => p.slug !== slug)),
+      deletePage: (slug) => setPages((prev) => prev.filter((p) => p.slug !== slug || p.builtin)),
+      resetLayout: (slug) => setPages((prev) => prev.filter((p) => !(p.slug === slug && p.builtin))),
       addBlock: (slug, type) => {
-        const block = createBlock(type, pages.find((p) => p.slug === slug)?.blocks ?? []);
+        const block = createBlock(type, find(slug)?.blocks ?? []);
         patchPage(slug, (p) => ({ ...p, blocks: [...p.blocks, block] }));
         return block.id;
       },
@@ -48,7 +58,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
         patchPage(slug, (p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === id ? { ...b, x: snap(x), y: snap(y) } : b)) })),
       removeBlock: (slug, id) => patchPage(slug, (p) => ({ ...p, blocks: p.blocks.filter((b) => b.id !== id) })),
       duplicateBlock: (slug, id) => {
-        const all = pages.find((p) => p.slug === slug)?.blocks ?? [];
+        const all = find(slug)?.blocks ?? [];
         const src = all.find((b) => b.id === id);
         if (!src) return undefined;
         const copyId = newId('b');

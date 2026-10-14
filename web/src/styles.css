@@ -475,7 +475,7 @@ button.chip:hover { background: #eef3f8; border-color: #8aa4c0; }
 .cb:hover .cb__body > *, .cb--edit:focus-visible .cb__body > * { box-shadow: 0 4px 14px rgba(31, 41, 51, 0.14); }
 .cb.is-dragging { cursor: grabbing; z-index: 5; }
 .cb.is-dragging .cb__body > * { box-shadow: 0 12px 30px rgba(31, 41, 51, 0.25); }
-.cb__size { position: absolute; left: -6px; top: -8px; z-index: 3; min-width: 20px; height: 18px; padding: 0 5px; display: grid; place-items: center; border-radius: 9px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; pointer-events: none; }
+.cb__size { position: absolute; left: -6px; top: -8px; z-index: 3; display: none; min-width: 20px; height: 18px; padding: 0 5px; display: grid; place-items: center; border-radius: 9px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; pointer-events: none; }
 .cb__sure { font-size: 12px; font-weight: 700; white-space: nowrap; }
 .sizes { display: inline-flex; padding: 2px; background: #eeece9; border-radius: 8px; gap: 2px; }
 .sizes button { min-width: 44px; height: 32px; padding: 0 12px; border: 0; background: none; border-radius: 6px; font-size: 13px; font-weight: 500; color: #4b5560; }
@@ -614,3 +614,8 @@ button.chip:hover { background: #eef3f8; border-color: #8aa4c0; }
   .be__form { order: 0; }
   .be__explain { order: 1; margin-top: 0; overflow: visible; background: #f8f7f5; border-radius: 12px; padding: 14px 16px; }
 }
+.be__note { font-size: 13px; color: #4b5560; background: #f8f7f5; border-radius: 10px; padding: 10px 14px; }
+.be__note a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.canvas:not(.canvas--edit) .canvas__inner { background-image: none; }
+
+.cb--edit:hover .cb__size, .cb.is-selected .cb__size { display: grid; }

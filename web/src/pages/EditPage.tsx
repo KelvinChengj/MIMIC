@@ -8,8 +8,6 @@ import { STATUS_META, describeRules, evaluateSystem, formatValue, tileText, vali
 import { cloneMetricRules, defaultRulesFor, useRules } from '../state/RulesContext';
 import { useFdm } from '../state/FdmContext';
 import { useUi } from '../state/UiContext';
-import { useUserPages } from '../state/UserPagesContext';
-import { UserPageView } from './UserPageView';
 import type { MetricRule, RulesConfig, Status, SystemDef, SystemRules } from '../types';
 
 type Field = keyof MetricRule;
@@ -40,12 +38,11 @@ interface TestResult {
   staleMinutes: number;
 }
 
-export function EditRoute() {
+/** 門檻設定：系統的黃 / 紅燈門檻、連續成立點數，按 Test 試算。路由 /p/:slug/thresholds */
+export function ThresholdsRoute() {
   const { slug = '' } = useParams();
-  const userPage = useUserPages().getPage(slug);
-  if (userPage) return <UserPageView page={userPage} edit />;
   const page = pageBySlug(slug);
-  if (!page?.scope) return <NotFound what="可編輯的頁面" />;
+  if (!page?.scope) return <NotFound what="可設定門檻的頁面" />;
   return <EditView slug={slug} title={page.title} systemIds={page.scope.systems} siteIds={page.scope.sites} />;
 }
 
@@ -129,10 +126,10 @@ function EditView({ slug, title, systemIds, siteIds }: { slug: string; title: st
       <nav className="crumbs" aria-label="路徑">
         <Link to={`/p/${slug}`}>{title}</Link>
         <span aria-hidden="true">›</span>
-        <strong>編輯模式</strong>
+        <strong>門檻設定</strong>
       </nav>
       <PageHeader
-        title={<>編輯燈號 <span className="mode-pill">編輯模式</span></>}
+        title={<>門檻設定 <span className="mode-pill">{sys.name} {sys.short}</span></>}
         sub="設定黃、紅燈門檻，按 Test 以目前 FDM 數值試算"
         actions={
           <>

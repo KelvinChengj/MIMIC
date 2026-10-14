@@ -1,4 +1,5 @@
 import { evaluateLamp } from '../../lib/blocks';
+import { cellsStatus } from '../cells';
 import { SCALE } from '../layout';
 import { LampSimProvider } from './sim';
 import type { LampProps } from '../../types';
@@ -25,5 +26,7 @@ export const lampBlock: BlockDefinition<LampProps> = {
   Editor: LampEditor,
   Explain: LampExplain,
   EditorProvider: LampSimProvider,
-  status: (b, env) => evaluateLamp(b.props, env.getValue).status,
+  explainable: (b) => !b.props.source,
+  status: (b, env) =>
+    b.props.source ? cellsStatus(env, [b.props.source.site], [b.props.source.system]) : evaluateLamp(b.props, env.getValue).status,
 };

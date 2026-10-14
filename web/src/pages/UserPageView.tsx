@@ -1,44 +1,53 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { OVERVIEW_HOST, pageHost } from '../blocks/host';
 import { BlockDetail, BlockDialog } from '../components/BlockDialog';
 import { BlockLibrary } from '../components/BlockLibrary';
 import { Canvas } from '../components/Canvas';
 import { PlusIcon } from '../components/Icons';
 import { Legend } from '../components/Lamp';
 import { BackButton, FullscreenButton, PageHeader } from '../components/PageParts';
-import type { BlockHost } from '../blocks/types';
+import { pageBySlug } from '../catalog/catalog';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
 import { useUserPages } from '../state/UserPagesContext';
 import type { UserPage } from '../types';
 
-/** 自建頁面積木裡的下鑽連結，掛在涵蓋所有廠區與系統的「全廠總覽」底下 */
-const HOST: BlockHost = { drillBase: 'overview' };
-
-/** 自建頁面：檢視 /p/:slug；編輯 /p/:slug/edit（左側積木庫 + 畫布） */
+/**
+ * 積木畫布頁面：檢視 /p/:slug；編輯 /p/:slug/edit（左側積木庫 + 畫布）。
+ * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除，但可以還原預設版面。
+ */
 export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) {
-  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage } = useUserPages();
+  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, resetLayout } = useUserPages();
   const { removeSlug } = useFavorites();
   const { showToast } = useUi();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const host = useMemo(() => (page.builtin ? pageHost(pageBySlug(page.slug)) : OVERVIEW_HOST), [page.builtin, page.slug]);
 
   const open = page.blocks.find((b) => b.id === openId);
   const add = (type: string) => setOpenId(addBlock(page.slug, type));
   const remove = () => {
-    if (!confirmDelete) return setConfirmDelete(true);
+    if (!confirm) return setConfirm(true);
     deletePage(page.slug);
     removeSlug(page.slug);
     showToast(`已刪除頁面「${page.title}」`);
     navigate('/');
+  };
+  const reset = () => {
+    if (!confirm) return setConfirm(true);
+    resetLayout(page.slug);
+    setConfirm(false);
+    setOpenId(null);
+    showToast('已還原預設版面');
   };
 
   const canvas = (
     <Canvas
       blocks={page.blocks}
       edit={edit}
-      host={HOST}
+      host={host}
       onOpen={setOpenId}
       onMove={(id, x, y) => moveBlock(page.slug, id, x, y)}
       onResize={(id, size) => updateBlock(page.slug, id, { size })}
@@ -62,27 +71,41 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
     />
   );
 
+  const dangerBtn = page.builtin ? (
+    <button className={`btn ${confirm ? 'btn--danger' : ''}`} onClick={reset} onBlur={() => setConfirm(false)}>
+      {confirm ? '確定還原？你的修改會消失' : '還原預設版面'}
+    </button>
+  ) : (
+    <button className={`btn ${confirm ? 'btn--danger' : ''}`} onClick={remove} onBlur={() => setConfirm(false)}>
+      {confirm ? '確定刪除整個頁面？' : '刪除頁面'}
+    </button>
+  );
+
   return (
     <>
       {edit ? (
         <PageHeader
           title={
             <>
-              <input
-                className="title-input" aria-label="頁面名稱" value={page.title} maxLength={40}
-                style={{ width: `${Math.max(6, [...page.title].reduce((w, c) => w + (c.charCodeAt(0) > 255 ? 1.05 : 0.62), 1.6))}em` }}
-                onChange={(e) => renamePage(page.slug, e.target.value)}
-                onBlur={(e) => !e.target.value.trim() && renamePage(page.slug, '未命名頁面')}
-              />
+              {page.builtin ? (
+                <span>{page.title}</span>
+              ) : (
+                <input
+                  className="title-input" aria-label="頁面名稱" value={page.title} maxLength={40}
+                  style={{ width: `${Math.max(6, [...page.title].reduce((w, c) => w + (c.charCodeAt(0) > 255 ? 1.05 : 0.62), 1.6))}em` }}
+                  onChange={(e) => renamePage(page.slug, e.target.value)}
+                  onBlur={(e) => !e.target.value.trim() && renamePage(page.slug, '未命名頁面')}
+                />
+              )}
               <span className="mode-pill">編輯模式</span>
             </>
           }
-          sub="從積木庫加入積木，拖曳擺放；滑過積木可切換小、中、大，點積木編輯內容。變更自動儲存"
+          sub={page.builtin
+            ? '整張燈號牆都是燈號積木與文字積木：拖曳、縮放、增刪都可以。燈號積木點兩下編輯；變更自動儲存'
+            : '從積木庫加入積木，拖曳擺放；點一下積木選取後可切換小、中、大，點兩下編輯。變更自動儲存'}
           actions={
             <>
-              <button className={`btn ${confirmDelete ? 'btn--danger' : ''}`} onClick={remove} onBlur={() => setConfirmDelete(false)}>
-                {confirmDelete ? '確定刪除整個頁面？' : '刪除頁面'}
-              </button>
+              {dangerBtn}
               <Link className="btn btn--primary" to={`/p/${page.slug}`}>完成</Link>
             </>
           }
@@ -90,11 +113,12 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
       ) : (
         <PageHeader
           title={page.title}
-          sub={`自訂頁面 · ${page.blocks.length} 個積木`}
+          sub={page.builtin ? '廠區 → 系統' : `自訂頁面 · ${page.blocks.length} 個積木`}
           actions={
             <>
               <BackButton />
               <FullscreenButton />
+              {page.builtin && <Link className="btn" to={`/p/${page.slug}/thresholds`}>門檻設定</Link>}
               <Link className="btn btn--primary" to={`/p/${page.slug}/edit`}>Edit</Link>
             </>
           }

@@ -5,9 +5,8 @@ import { pageBySlug } from '../catalog/catalog';
 import { useUserPages } from '../state/UserPagesContext';
 import { DrillView } from './DrillPage';
 import { UserPageView } from './UserPageView';
-import { WallPage } from './WallPage';
 
-/** /p/:slug：依頁面設定決定顯示燈號牆、單一系統下鑽，或示意頁 */
+/** /p/:slug：自建頁面與內建燈號牆 = 積木畫布；單一系統 = 下鑽頁；其餘是示意頁 */
 export function PageRoute() {
   const { slug = '' } = useParams();
   const userPage = useUserPages().getPage(slug);
@@ -30,9 +29,7 @@ export function PageRoute() {
     );
   }
 
+  // 範圍只有一個格子 = 下鑽頁；多個格子的燈號牆頁面已在上面由 getPage 以積木畫布呈現
   const { sites, systems } = page.scope;
-  if (sites.length === 1 && systems.length === 1) {
-    return <DrillView page={page} siteId={sites[0]} systemId={systems[0]} embedded />;
-  }
-  return <WallPage page={page} />;
+  return <DrillView page={page} siteId={sites[0]} systemId={systems[0]} embedded />;
 }

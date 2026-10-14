@@ -1,12 +1,12 @@
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { BlockRender } from '../blocks/BlockView';
 import { footprintOf, getBlockDef } from '../blocks/registry';
-import type { BlockHost } from '../blocks/types';
+import { OVERVIEW_HOST } from '../blocks/host';
 import type { PageBlock } from '../types';
 import { Modal } from './Modal';
 import { SizeSwitch } from './SizeSwitch';
 
-const HOST: BlockHost = { drillBase: 'overview' };
+const HOST = OVERVIEW_HOST;
 
 /** 預覽區：用實際尺寸畫出積木，改尺寸、改內容時即時變化 */
 function Stage({ block }: { block: PageBlock }) {

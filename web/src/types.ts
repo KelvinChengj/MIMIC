@@ -116,6 +116,11 @@ export interface LampProps {
   yellowExpr: string;
   /** 燈號下方文字怎麼顯示（舊資料沒有這個欄位，視為 auto） */
   caption?: LampCaption;
+  /**
+   * 資料來源：有值＝直接顯示某廠區某系統的整體燈號（沿用平台的紅黃綠判定規則，
+   * 文字如「3 台異常」，點了下鑽）；沒有＝用上面的資料點與算式自己判斷。
+   */
+  source?: { site: string; system: string };
   /** 自訂各燈號的狀態文字，空白＝用預設（異常 / 部分異常 / 正常） */
   labels?: Partial<Record<'red' | 'yellow' | 'green', string>>;
 }
@@ -141,4 +146,6 @@ export interface UserPage {
   title: string;
   blocks: PageBlock[];
   createdAt: number;
+  /** 內建頁面（燈號牆）的版面：預設由程式產生，使用者改過才會存下來 */
+  builtin?: boolean;
 }

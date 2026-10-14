@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BlockStack } from '../blocks/BlockView';
 import { drillPageBlocks } from '../blocks/builtin';
+import { pageHost } from '../blocks/host';
 import { BackButton, FullscreenButton, NotFound } from '../components/PageParts';
 import { SITES, SYSTEMS, pageBySlug } from '../catalog/catalog';
 import type { PageDef } from '../types';
@@ -19,7 +20,8 @@ export function DrillView({ page, siteId, systemId, embedded = false }: { page: 
   const site = SITES.find((s) => s.id === siteId);
   const sys = SYSTEMS.find((s) => s.id === systemId);
   const base = `/p/${page.slug}`;
-  const blocks = useMemo(() => drillPageBlocks(siteId, systemId, `${base}/edit?system=${systemId}`), [siteId, systemId, base]);
+  const host = useMemo(() => pageHost(page), [page]);
+  const blocks = useMemo(() => drillPageBlocks(siteId, systemId, `${base}/thresholds?system=${systemId}`), [siteId, systemId, base]);
   if (!site || !sys) return <NotFound what="燈號頁面" />;
 
   return (
@@ -40,7 +42,7 @@ export function DrillView({ page, siteId, systemId, embedded = false }: { page: 
         <BackButton />
         <FullscreenButton />
       </nav>
-      <BlockStack blocks={blocks} host={{ drillBase: page.slug }} />
+      <BlockStack blocks={blocks} host={host} />
     </>
   );
 }

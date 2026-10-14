@@ -58,7 +58,7 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
           <button className="btn btn--primary" onClick={() => { startSpin(); refresh(); }}>
             <RefreshIcon size={16} className={spin ? 'spin' : ''} /> Refresh Values
           </button>
-          <Link className="btn btn--primary" to={editTo}><EditIcon size={16} /> Edit</Link>
+          <Link className="btn btn--primary" to={editTo}><EditIcon size={16} /> 門檻設定</Link>
         </div>
       )}
     </section>
