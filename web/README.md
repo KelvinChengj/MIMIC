@@ -1,0 +1,47 @@
+# MIMIC Web（React + TypeScript）
+
+廠務燈號平台的桌機版網頁設計。燈號：🔴 紅＝異常、🟡 黃＝部分異常、🟢 綠＝正常、⚪ 灰＝無資料；資料來源為 FDM（目前以模擬資料取代）。
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173
+npm test           # 燈號判定邏輯單元測試（vitest）
+npm run build      # tsc 型別檢查 + 正式建置到 dist/
+```
+
+## 頁面與網址
+
+每一頁都有獨立網址（BrowserRouter；正式部署的靜態伺服器需把所有路徑 fallback 到 `index.html`）。
+
+| 網址 | 內容 |
+|---|---|
+| `/p/overview` | 首頁燈號牆（廠區 × 系統），點磚塊下鑽 |
+| `/p/:slug/:site/:system` | 下鑽頁：規則說明、Tag name / Description / Value，可切「僅顯示異常 / 全部 Tag」 |
+| `/p/:slug/edit?system=upw` | 編輯模式：黃 / 紅燈上下限、紅燈連續成立點數、無資料判定分鐘；按 **Test** 以目前 FDM 值試算並與已儲存設定比較，確認後 Save |
+| `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |
+| `/p/:slug` | 其他頁面（Favorites 側欄、Explore 結果）；單一廠區 × 系統的頁面直接顯示下鑽內容 |
+
+左側 Favorites 側欄可收合為窄欄、群組可展開 / 收起、群組內可拖曳排序；狀態存在 localStorage。燈號牆頁的 **Full screen** 進入看板模式（Esc 離開）。
+
+## 燈號判定規則
+
+- 單一 Tag：最新值為 null → 灰；最近 N 點**全部**超出紅色管制 → 紅；最新值超出黃色管制（或超出紅色但未連續 N 點）→ 黃；否則綠。
+- 廠區 × 系統：任一 Tag 紅 → 紅；否則任一黃 → 黃；否則有綠 → 綠；全部無資料 → 灰。
+- 頁面（側欄 / Explore 的圓點）彙整多個格子：紅 > 黃 > 灰 > 綠，有缺資料的頁面不報平安。
+- 門檻依「系統 × 量測類型」設定（Tag 名稱 `.` 後的尾碼，如 `.TOC`、`.RES`），同系統所有廠區共用；留空代表不管制。
+
+## 結構
+
+```
+src/catalog/catalog.ts    廠區、系統、量測類型門檻預設值、Tag 清單、頁面目錄（含 Explore 資料）
+src/lib/fdm.ts          FDM 資料來源（模擬）。接真實 API 只需替換 fetchSnapshot
+src/lib/status.ts       燈號判定、彙整、規則文字、門檻驗證（純函式，有測試）
+src/state/              FDM / 門檻設定 / Favorites / UI 的 Context
+src/pages/              WallPage、DrillPage、EditPage、ExplorePage、PageRoute
+src/components/         Layout、Sidebar、Topbar、Lamp 等
+```
+
+示範資料內建幾個情境：F18P2 超純水 3 紅 2 黃 1 灰、F18P7 排氣整區無資料（灰）、F18P1 電力有一點尖峰值但未連續 3 點（黃）——在編輯模式把「連續成立點數」改成 1 再按 Test 就會看到它變紅。
+
+> 這是前端設計稿：沒有後端與登入，門檻設定只存在瀏覽器 localStorage。

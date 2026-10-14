@@ -9,6 +9,8 @@
 | 🟢 綠 | 正常 |
 | ⚪ 灰 | 無資料 |
 
+> **新版 React + TypeScript 桌機網頁設計在 [`web/`](web/README.md)**（燈號牆、下鑽、編輯與 Test 試算、Explore / Favorites）。以下為舊版零依賴原型。
+
 ## 快速開始
 
 ```bash
