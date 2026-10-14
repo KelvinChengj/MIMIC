@@ -1,10 +1,6 @@
 import { SITES, SYSTEMS } from '../catalog/catalog';
-import type { BlockVar, RulesConfig, Snapshot, Status, UserBlock } from '../types';
+import type { BlockVar, LampProps, RulesConfig, Snapshot, Status } from '../types';
 import { fmtNum, run, type Env, type RunResult } from './expr';
-
-export const BLOCK_W = 224;
-export const BLOCK_H = 176;
-export const GRID = 10;
 
 export interface TagInfo {
   key: string;
@@ -76,7 +72,7 @@ export interface BlockResult {
 
 const LABELS: Record<Status, string> = { red: '異常', yellow: '部分異常', green: '正常', gray: '' };
 
-export function evaluateBlock(block: UserBlock, getValue: ValueGetter): BlockResult {
+export function evaluateLamp(block: LampProps, getValue: ValueGetter): BlockResult {
   const vars: VarState[] = block.vars.map((v) => {
     const tag = v.site && v.tag ? TAG_BY_KEY.get(tagKey(v.site, v.tag)) : undefined;
     return { name: v.name, tag, value: tag ? getValue(tag.siteId, tag.name) : null };
@@ -117,21 +113,6 @@ export function evaluateBlock(block: UserBlock, getValue: ValueGetter): BlockRes
   return done('green', red.state === 'empty' ? '黃燈條件不成立' : '紅、黃燈條件都不成立');
 }
 
-const hits = (a: UserBlock, x: number, y: number) =>
-  Math.abs(a.x - x) < BLOCK_W && Math.abs(a.y - y) < BLOCK_H;
-
-/** 找第一個不會壓到既有積木的位置（4 欄網格） */
-export function nextFreePosition(blocks: UserBlock[]): { x: number; y: number } {
-  for (let i = 0; i < 200; i++) {
-    const x = 24 + (i % 4) * (BLOCK_W + 24);
-    const y = 24 + Math.floor(i / 4) * (BLOCK_H + 24);
-    if (!blocks.some((b) => hits(b, x, y))) return { x, y };
-  }
-  return { x: 24, y: 24 };
-}
-
-export const snap = (n: number) => Math.max(0, Math.round(n / GRID) * GRID);
-
 export function nextVarName(vars: BlockVar[]): string {
   const used = new Set(vars.map((v) => v.name));
   for (let i = 0; i < 26; i++) {
@@ -143,19 +124,6 @@ export function nextVarName(vars: BlockVar[]): string {
 
 const rid = () => Math.random().toString(36).slice(2, 8);
 export const newId = (prefix: string) => `${prefix}-${rid()}`;
-
-export function makeBlock(blocks: UserBlock[]): UserBlock {
-  return {
-    id: newId('b'),
-    title: `燈號 ${blocks.length + 1}`,
-    ...nextFreePosition(blocks),
-    vars: [],
-    valueExpr: '',
-    unit: '',
-    redExpr: '',
-    yellowExpr: '',
-  };
-}
 
 /** 依該量測目前的門檻設定，產生對應的紅 / 黃條件算式 */
 export function conditionsFromRules(varName: string, tag: TagInfo, rules: RulesConfig): { redExpr: string; yellowExpr: string } {

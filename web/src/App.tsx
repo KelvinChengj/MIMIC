@@ -1,4 +1,5 @@
 import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { registerBuiltinBlocks } from './blocks';
 import { Layout } from './components/Layout';
 import { NotFound } from './components/PageParts';
 import { DrillRoute } from './pages/DrillPage';
@@ -10,6 +11,8 @@ import { FdmProvider } from './state/FdmContext';
 import { RulesProvider } from './state/RulesContext';
 import { UiProvider } from './state/UiContext';
 import { UserPagesProvider } from './state/UserPagesContext';
+
+registerBuiltinBlocks();
 
 /** 單一檔案的線上 Demo 沒有伺服器可做路徑 fallback，改用 #/ 形式的網址 */
 const Router = import.meta.env.VITE_HASH ? HashRouter : BrowserRouter;

@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
-import { buildValueGetter, evaluateBlock } from '../lib/blocks';
+import { buildValueGetter } from '../lib/blocks';
+import { getBlockDef } from '../blocks/registry';
+import type { BlockEnv } from '../blocks/types';
 import { useUserPages } from './UserPagesContext';
 import { SYSTEMS, systemById } from '../catalog/catalog';
 import { evaluateSystem, worstOf } from '../lib/status';
 import { pageBySlug } from '../catalog/catalog';
-import type { PageDef, Status, UserBlock } from '../types';
+import type { PageDef, Status } from '../types';
 import { useFdm } from './FdmContext';
 import { useRules } from './RulesContext';
 
@@ -44,10 +46,12 @@ export function useValueGetter() {
   return useMemo(() => buildValueGetter(snapshot), [snapshot]);
 }
 
-/** 以目前 FDM 數值判定自建積木的燈號 */
-export function useBlockEvaluator() {
-  const getter = useValueGetter();
-  return useMemo(() => (b: UserBlock) => evaluateBlock(b, getter), [getter]);
+/** 積木判定燈號所需的資料（FDM 快照、門檻設定、單點取值） */
+export function useBlockEnv(): BlockEnv {
+  const { snapshot } = useFdm();
+  const { rules } = useRules();
+  const getValue = useValueGetter();
+  return useMemo(() => ({ snapshot, rules, getValue }), [snapshot, rules, getValue]);
 }
 
 export interface ResolvedPage {
@@ -61,19 +65,20 @@ export interface ResolvedPage {
 export function useResolvePage() {
   const { getPage } = useUserPages();
   const pageStatus = usePageStatus();
-  const evalBlock = useBlockEvaluator();
+  const env = useBlockEnv();
   return useMemo(
     () =>
       (slug: string): ResolvedPage | null => {
         const up = getPage(slug);
         if (up) {
-          // 空白頁面沒有任何燈號，顯示灰色
-          const status = worstOf(up.blocks.length ? up.blocks.map((b) => evalBlock(b).status) : ['gray']);
+          // 整頁燈號 = 各積木貢獻的燈號取最差；沒有任何燈號意義的積木（空白頁、只有文字）顯示灰色
+          const contributions = up.blocks.flatMap((b) => getBlockDef(b.type)?.status?.(b, env) ?? []);
+          const status = worstOf(contributions.length ? contributions : ['gray']);
           return { slug, title: up.title, status, user: true };
         }
         const page = pageBySlug(slug);
         return page ? { slug, title: page.title, status: pageStatus(page), user: false } : null;
       },
-    [getPage, pageStatus, evalBlock],
+    [getPage, pageStatus, env],
   );
 }

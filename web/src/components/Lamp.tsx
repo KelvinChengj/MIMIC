@@ -13,30 +13,6 @@ export function Dot({ status, className = '' }: { status: Status; className?: st
   );
 }
 
-const GLYPHS: Record<Status, JSX.Element> = {
-  green: <path d="m7 12.5 3.2 3.2L17 8.8" />,
-  red: <path d="m8 8 8 8M16 8l-8 8" />,
-  yellow: <path d="M12 7v6.2M12 16.6v.1" />,
-  gray: <path d="M9.6 9.6a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1.1.9-1.1 1.6M12 16.6v.1" />,
-};
-
-/** 紅黃綠三顆燈：亮的那顆是目前狀態；灰色（無資料／未設定）時三顆都熄滅 */
-export function LampTriple({ status, size = 38 }: { status: Status; size?: number }) {
-  return (
-    <span className="triple" role="img" aria-label={status === 'gray' ? '三色燈皆熄滅' : `${STATUS_META[status].label}燈亮`}>
-      {(['red', 'yellow', 'green'] as const).map((s) => (
-        <span key={s} className={`triple__l triple__l--${s} ${status === s ? 'is-on' : ''}`} style={{ width: size, height: size }}>
-          {status === s && (
-            <svg viewBox="0 0 24 24" width={size * 0.7} height={size * 0.7} aria-hidden="true" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              {GLYPHS[s]}
-            </svg>
-          )}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 /** 圓形燈號圖示：✓ 綠、✕ 紅、! 黃、? 灰，形狀也能區分狀態 */
 export function Lamp({ status, size = 34 }: { status: Status; size?: number }) {
   const glyph = {

@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { makeBlock, newId, snap } from '../lib/blocks';
-import type { UserBlock, UserPage } from '../types';
+import { nextFreePosition, snap } from '../blocks/layout';
+import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
+import { newId } from '../lib/blocks';
+import type { PageBlock, UserPage } from '../types';
 import { usePersistentState } from './storage';
 
 interface UserPagesValue {
@@ -9,8 +11,8 @@ interface UserPagesValue {
   createPage: (title: string) => string;
   renamePage: (slug: string, title: string) => void;
   deletePage: (slug: string) => void;
-  addBlock: (slug: string) => string;
-  updateBlock: (slug: string, id: string, patch: Partial<UserBlock>) => void;
+  addBlock: (slug: string, type: string) => string;
+  updateBlock: (slug: string, id: string, patch: Partial<PageBlock>) => void;
   moveBlock: (slug: string, id: string, x: number, y: number) => void;
   removeBlock: (slug: string, id: string) => void;
   duplicateBlock: (slug: string, id: string) => string | undefined;
@@ -18,7 +20,9 @@ interface UserPagesValue {
 const Ctx = createContext<UserPagesValue | null>(null);
 
 export function UserPagesProvider({ children }: { children: ReactNode }) {
-  const [pages, setPages] = usePersistentState<UserPage[]>('mimic.userpages.v1', []);
+  const [stored, setPages] = usePersistentState<UserPage[]>('mimic.userpages.v1', []);
+  // 舊版只有燈號積木、沒有 type / size 欄位；讀進來時統一轉成新格式
+  const pages = useMemo(() => stored.map((p) => ({ ...p, blocks: p.blocks.map(normalizeBlock) })), [stored]);
 
   const value = useMemo<UserPagesValue>(() => {
     const patchPage = (slug: string, fn: (p: UserPage) => UserPage) =>
@@ -33,10 +37,10 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),
       deletePage: (slug) => setPages((prev) => prev.filter((p) => p.slug !== slug)),
-      addBlock: (slug) => {
-        const id = newId('b');
-        patchPage(slug, (p) => ({ ...p, blocks: [...p.blocks, { ...makeBlock(p.blocks), id }] }));
-        return id;
+      addBlock: (slug, type) => {
+        const block = createBlock(type, pages.find((p) => p.slug === slug)?.blocks ?? []);
+        patchPage(slug, (p) => ({ ...p, blocks: [...p.blocks, block] }));
+        return block.id;
       },
       updateBlock: (slug, id, patch) =>
         patchPage(slug, (p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) })),
@@ -44,12 +48,15 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
         patchPage(slug, (p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === id ? { ...b, x: snap(x), y: snap(y) } : b)) })),
       removeBlock: (slug, id) => patchPage(slug, (p) => ({ ...p, blocks: p.blocks.filter((b) => b.id !== id) })),
       duplicateBlock: (slug, id) => {
-        const src = pages.find((p) => p.slug === slug)?.blocks.find((b) => b.id === id);
+        const all = pages.find((p) => p.slug === slug)?.blocks ?? [];
+        const src = all.find((b) => b.id === id);
         if (!src) return undefined;
         const copyId = newId('b');
+        // 複本放在畫布上第一個空位，不疊在原件上
+        const at = nextFreePosition(all, footprintOf, footprintOf(src));
         patchPage(slug, (p) => ({
           ...p,
-          blocks: [...p.blocks, { ...src, id: copyId, title: `${src.title}（複製）`, x: src.x + 30, y: src.y + 30, vars: src.vars.map((v) => ({ ...v })) }],
+          blocks: [...p.blocks, { ...src, id: copyId, title: src.title ? `${src.title}（複製）` : '', ...at, props: structuredClone(src.props) }],
         }));
         return copyId;
       },

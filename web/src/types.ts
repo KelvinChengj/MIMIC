@@ -91,18 +91,18 @@ export interface PageDef {
   explore?: boolean;
 }
 
-/** 使用者自建頁面上的燈號積木 */
+/** 積木尺寸：小 / 中 / 大 */
+export type BlockSize = 'S' | 'M' | 'L';
+
 export interface BlockVar {
   /** 算式中使用的名稱：A、B、C… */
   name: string;
   site?: string;
   tag?: string;
 }
-export interface UserBlock {
-  id: string;
-  title: string;
-  x: number;
-  y: number;
+
+/** 「燈號積木」(type: 'lamp') 的內容 */
+export interface LampProps {
   vars: BlockVar[];
   /** 顯示值算式（可空白）。例：(A + B) / 2 */
   valueExpr: string;
@@ -112,9 +112,26 @@ export interface UserBlock {
   /** 黃燈條件；紅燈不成立時才判斷 */
   yellowExpr: string;
 }
+
+/**
+ * 頁面上的一個積木。所有積木共用這個外殼，
+ * 各積木種類自己的內容放在 props（由 src/blocks/ 底下對應的定義負責解讀）。
+ */
+export interface PageBlock<P = unknown> {
+  id: string;
+  /** 積木種類，對應 blocks/registry 裡註冊的 type */
+  type: string;
+  title: string;
+  size: BlockSize;
+  /** 畫布座標（流式排版的內建頁面不使用） */
+  x: number;
+  y: number;
+  props: P;
+}
+
 export interface UserPage {
   slug: string;
   title: string;
-  blocks: UserBlock[];
+  blocks: PageBlock[];
   createdAt: number;
 }
