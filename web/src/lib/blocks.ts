@@ -1,6 +1,6 @@
 import { SITES, SYSTEMS } from '../catalog/catalog';
-import type { BlockVar, LampProps, RulesConfig, Snapshot, Status } from '../types';
-import { fmtNum, run, type Env, type RunResult } from './expr';
+import type { LampProps, Snapshot, Status, TagReading, TagRef } from '../types';
+import { STATUS_META, summarize, tagStatus, type Summary } from './status';
 
 export interface TagInfo {
   key: string;
@@ -17,7 +17,7 @@ export interface TagInfo {
 
 export const tagKey = (siteId: string, tag: string) => `${siteId}|${tag}`;
 
-/** 所有可選的資料點（各廠區 × 各系統的 Tag） */
+/** FDM 的 Tag 主檔：所有廠區 × 系統可選的 Tag（選取、檢查是否有效都以這份為準） */
 export const ALL_TAGS: TagInfo[] = SITES.flatMap((site) =>
   SYSTEMS.flatMap((sys) =>
     sys.tags.slice(0, sys.tags.length - site.dropTags).map((t): TagInfo => {
@@ -40,104 +40,111 @@ export const ALL_TAGS: TagInfo[] = SITES.flatMap((site) =>
 );
 export const TAG_BY_KEY = new Map(ALL_TAGS.map((t) => [t.key, t]));
 
-export type ValueGetter = (siteId: string, tag: string) => number | null;
+/** FDM 最新一次回傳，依「廠區|Tag」查詢 */
+export type TagIndex = Map<string, TagReading>;
 
-export function buildValueGetter(snapshot: Snapshot): ValueGetter {
-  const m = new Map<string, number | null>();
+export function buildTagIndex(snapshot: Snapshot): TagIndex {
+  const m: TagIndex = new Map();
   for (const [siteId, systems] of Object.entries(snapshot.data))
-    for (const readings of Object.values(systems))
-      for (const r of readings) m.set(tagKey(siteId, r.name), r.history[r.history.length - 1] ?? null);
-  return (siteId, tag) => m.get(tagKey(siteId, tag)) ?? null;
+    for (const readings of Object.values(systems)) for (const r of readings) m.set(tagKey(siteId, r.name), r);
+  return m;
 }
 
-export interface VarState {
-  name: string;
-  tag?: TagInfo;
-  value: number | null;
-  /** FDM 的真實數值（不受模擬值影響） */
-  real: number | null;
-  /** 這個值是編輯時手動填的模擬值，不是 FDM 的真實數值 */
-  simulated: boolean;
+/** 燈號積木選取的 Tag；舊資料（自訂算式時期）的資料點自動轉成 Tag，重複的只算一次 */
+export function lampTags(p: LampProps): TagRef[] {
+  const raw = p.tags ?? (p.vars ?? []).flatMap((v) => (v.site && v.tag ? [{ site: v.site, tag: v.tag }] : []));
+  const seen = new Set<string>();
+  return raw.filter((r) => {
+    const k = tagKey(r.site, r.tag);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
-/** 以資料點名稱（A、B…）覆蓋數值，用來在編輯時試算；null＝模擬無資料 */
-export type Overrides = Record<string, number | null>;
-
-export interface BlockResult {
-  /** 紅 / 黃 / 綠；無資料、未設定、算式有誤時為灰 */
+export interface LampTagState {
+  ref: TagRef;
+  info?: TagInfo;
+  /** FDM 有這個 Tag */
+  valid: boolean;
+  reading?: TagReading;
   status: Status;
-  reason: 'ok' | 'unset' | 'nodata' | 'error';
+}
+
+export interface LampResult {
+  /** 紅 / 黃 / 綠；沒選 Tag、Tag 無效或全部無資料時為灰 */
+  status: Status;
+  reason: 'ok' | 'empty' | 'invalid' | 'nodata';
+  /** 狀態文字：異常 / 部分異常 / 正常 / 無資料 / 尚未選擇 Tag / Tag 無效 */
   label: string;
-  message: string;
-  vars: VarState[];
-  red: RunResult;
-  yellow: RunResult;
-  value: RunResult;
-  display: string;
-  unit: string;
+  /** 燈號下方一行字：單一 Tag 顯示數值，多個 Tag 顯示統計（例如「3 台異常」） */
+  text: string;
+  tags: LampTagState[];
+  /** 有效 Tag 的彙整 */
+  summary: Summary;
 }
 
-const LABELS: Record<Status, string> = { red: '異常', yellow: '部分異常', green: '正常', gray: '' };
+const fmt = (r: TagReading | undefined, info: TagInfo | undefined) =>
+  r?.value == null ? '無資料' : `${r.value.toFixed(info?.decimals ?? 1)}${info?.unit ? ` ${info.unit}` : ''}`;
 
-export function evaluateLamp(block: LampProps, getValue: ValueGetter, overrides: Overrides = {}): BlockResult {
-  const vars: VarState[] = block.vars.map((v) => {
-    const tag = v.site && v.tag ? TAG_BY_KEY.get(tagKey(v.site, v.tag)) : undefined;
-    const simulated = Object.prototype.hasOwnProperty.call(overrides, v.name);
-    const real = tag ? getValue(tag.siteId, tag.name) : null;
-    return { name: v.name, tag, simulated, real, value: simulated ? overrides[v.name] : real };
+/** 燈號積木的判定：完全依 FDM 回傳的 isOOS / isOOC，使用者不需要設定任何條件 */
+export function evaluateLamp(refs: TagRef[], index: TagIndex): LampResult {
+  const tags: LampTagState[] = refs.map((ref) => {
+    const reading = index.get(tagKey(ref.site, ref.tag));
+    return {
+      ref,
+      info: TAG_BY_KEY.get(tagKey(ref.site, ref.tag)),
+      valid: !!reading,
+      reading,
+      status: reading ? tagStatus(reading) : 'gray',
+    };
   });
-  const env: Env = Object.fromEntries(vars.map((v) => [v.name, v.value]));
-  const red = run(block.redExpr, env, 'bool');
-  const yellow = run(block.yellowExpr, env, 'bool');
-  const value = run(block.valueExpr, env, 'any');
+  const valid = tags.filter((t) => t.valid);
+  const summary = summarize(valid.map((t) => t.status));
+  const base = { tags, summary };
 
-  // 顯示值：沒寫算式且只有一個資料點時，直接顯示該點數值
-  let display = '';
-  let unit = block.unit;
-  if (value.state === 'ok') display = typeof value.value === 'boolean' ? (value.value ? '成立' : '不成立') : fmtNum(value.value);
-  else if (value.state === 'nodata') display = '—';
-  else if (value.state === 'error') display = '算式錯誤';
-  else if (vars.length === 1) {
-    const v = vars[0];
-    display = v.value == null ? '—' : v.tag ? v.value.toFixed(v.tag.decimals) : fmtNum(v.value);
-    if (!unit) unit = v.tag?.unit ?? '';
-  }
+  if (tags.length === 0) return { ...base, status: 'gray', reason: 'empty', label: '尚未選擇 Tag', text: '尚未選擇 Tag' };
+  if (valid.length === 0) return { ...base, status: 'gray', reason: 'invalid', label: 'Tag 無效', text: 'Tag 無效' };
 
-  const base = { vars, red, yellow, value, display, unit };
-  const gray = (reason: BlockResult['reason'], label: string, message: string): BlockResult => ({
-    ...base, status: 'gray', reason, label, message,
-  });
-
-  const firstError = [red, yellow, value].find((r) => r.state === 'error');
-  if (firstError && firstError.state === 'error') return gray('error', '公式錯誤', firstError.message);
-  if (red.state === 'empty' && yellow.state === 'empty') return gray('unset', '尚未設定', '尚未設定燈號條件');
-
-  const done = (status: Status, message: string): BlockResult => ({
-    ...base, status, reason: 'ok', label: block.labels?.[status as 'red' | 'yellow' | 'green']?.trim() || LABELS[status], message,
-  });
-  if (red.state === 'ok' && red.value === true) return done('red', `紅燈條件成立：${red.traced}`);
-  if (red.state === 'nodata') return gray('nodata', '無資料', `資料點 ${red.varName} 目前無資料`);
-  if (yellow.state === 'ok' && yellow.value === true) return done('yellow', `黃燈條件成立：${yellow.traced}`);
-  if (yellow.state === 'nodata') return gray('nodata', '無資料', `資料點 ${yellow.varName} 目前無資料`);
-  return done('green', red.state === 'empty' ? '黃燈條件不成立' : '紅、黃燈條件都不成立');
+  const status = summary.status;
+  const label = STATUS_META[status].badge;
+  let text: string;
+  if (valid.length === 1) text = fmt(valid[0].reading, valid[0].info);
+  else if (status === 'red') text = `${summary.red} 台異常`;
+  else if (status === 'yellow') text = `${summary.yellow}/${summary.total} 台`;
+  else if (status === 'green') text = `${summary.total} 台`;
+  else text = '無資料';
+  return { ...base, status, reason: status === 'gray' ? 'nodata' : 'ok', label, text };
 }
 
-export function nextVarName(vars: BlockVar[]): string {
-  const used = new Set(vars.map((v) => v.name));
-  for (let i = 0; i < 26; i++) {
-    const n = String.fromCharCode(65 + i);
-    if (!used.has(n)) return n;
+export interface TagInputResult {
+  /** FDM 有、且還不在清單裡的 Tag */
+  added: TagRef[];
+  /** 已經在清單裡 */
+  duplicate: string[];
+  /** FDM 找不到 */
+  missing: string[];
+}
+
+/**
+ * 檢查使用者輸入的 Tag 名稱（可一次貼多個，以換行、空白、逗號分隔，不分大小寫），
+ * 對照 FDM 的 Tag 主檔判斷是否有效。
+ */
+export function checkTagInput(text: string, siteId: string, existing: TagRef[]): TagInputResult {
+  const names = [...new Set(text.split(/[\s,，、;；]+/).map((s) => s.trim().toUpperCase()).filter(Boolean))];
+  const have = new Set(existing.map((r) => tagKey(r.site, r.tag)));
+  const out: TagInputResult = { added: [], duplicate: [], missing: [] };
+  for (const n of names) {
+    const info = ALL_TAGS.find((t) => t.siteId === siteId && t.name.toUpperCase() === n);
+    if (!info) out.missing.push(n);
+    else if (have.has(info.key)) out.duplicate.push(info.name);
+    else {
+      out.added.push({ site: siteId, tag: info.name });
+      have.add(info.key);
+    }
   }
-  return `V${vars.length + 1}`;
+  return out;
 }
 
 const rid = () => Math.random().toString(36).slice(2, 8);
 export const newId = (prefix: string) => `${prefix}-${rid()}`;
-
-/** 依該量測目前的門檻設定，產生對應的紅 / 黃條件算式 */
-export function conditionsFromRules(varName: string, tag: TagInfo, rules: RulesConfig): { redExpr: string; yellowExpr: string } {
-  const r = rules[tag.systemId]?.metrics[tag.metric] ?? {};
-  const join = (hi?: number, lo?: number) =>
-    [hi != null ? `${varName} > ${hi}` : '', lo != null ? `${varName} < ${lo}` : ''].filter(Boolean).join(' or ');
-  return { redExpr: join(r.redHigh, r.redLow), yellowExpr: join(r.yellowHigh, r.yellowLow) };
-}

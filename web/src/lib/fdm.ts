@@ -1,19 +1,18 @@
 import { SITES, SYSTEMS } from '../catalog/catalog';
-import type { Snapshot, TagReading } from '../types';
-
-export const HISTORY_POINTS = 6;
+import type { MetricRule, Snapshot, TagReading } from '../types';
 
 /**
+ * 模擬 FDM。真實環境中 isOOS / isOOC 由 FDM 判定後回傳，前端只負責顯示；
+ * 這裡用 catalog 裡各量測類型的界限模擬那個判定。
+ *
  * 情境表：指定某廠區 × 系統的 Tag 數值，讓示範畫面有紅黃灰燈。
- * - number：固定異常值（近 6 點皆同方向、不低於此偏離程度）
- * - { spike }：只有最新一點異常（用來示範「連續 N 點」的過濾效果）
- * - null：無資料；'*' 代表整個系統無資料
+ * - number：固定數值；null：無資料；'*' 代表整個系統無資料
  */
-type Pin = number | null | { spike: number };
+type Pin = number | null;
 const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
   f18p1: {
     chem: { 'CHEM-HF-01.LVL': 28, 'CHEM-NH4OH-01.TMP': 29 },
-    power: { 'PWR-TR1.TMP': { spike: 97 } },
+    power: { 'PWR-TR1.TMP': 97 },
   },
   f18p2: {
     upw: {
@@ -52,7 +51,15 @@ function rand(key: string): number {
 
 const jitter = (nominal: number, key: string) => nominal * (1 + (rand(key) - 0.5) * 0.01);
 
-/** 以模擬資料取代真實 FDM；接真實 API 時只要換掉這個函式 */
+/** 模擬 FDM 的判定：超出規格界限＝OOS；超出管制界限（未超規格）＝OOC；沒有資料兩者皆 false */
+export function judge(limits: MetricRule, value: number | null): { isOOS: boolean; isOOC: boolean } {
+  if (value == null) return { isOOS: false, isOOC: false };
+  const isOOS = (limits.redHigh != null && value > limits.redHigh) || (limits.redLow != null && value < limits.redLow);
+  const isOOC = !isOOS && ((limits.yellowHigh != null && value > limits.yellowHigh) || (limits.yellowLow != null && value < limits.yellowLow));
+  return { isOOS, isOOC };
+}
+
+/** 以模擬資料取代真實 FDM；接真實 API 時只要換掉這個函式，回傳同樣的結構 */
 export function fetchSnapshot(seq: number, now = Date.now()): Snapshot {
   const data: Snapshot['data'] = {};
   for (const site of SITES) {
@@ -63,18 +70,9 @@ export function fetchSnapshot(seq: number, now = Date.now()): Snapshot {
       data[site.id][sys.id] = tags.map((t): TagReading => {
         const metric = t.name.slice(t.name.lastIndexOf('.') + 1);
         const pin: Pin | undefined = t.name in pins ? pins[t.name] : '*' in pins ? pins['*'] : undefined;
-        const history = Array.from({ length: HISTORY_POINTS }, (_, i) => {
-          const k = `${site.id}|${t.name}|${seq}|${i}`;
-          const last = i === HISTORY_POINTS - 1;
-          if (pin === null) return null;
-          if (typeof pin === 'number') {
-            if (last) return pin;
-            return t.nominal + (pin - t.nominal) * (1 + rand(k) * 0.02);
-          }
-          if (pin && typeof pin === 'object') return last ? pin.spike : jitter(t.nominal, k);
-          return jitter(t.nominal, k);
-        });
-        return { name: t.name, desc: t.desc, metric, history };
+        const value = pin === undefined ? jitter(t.nominal, `${site.id}|${t.name}|${seq}`) : pin;
+        const limits = sys.metrics.find((m) => m.code === metric)?.defaults ?? {};
+        return { name: t.name, desc: t.desc, metric, value, ...judge(limits, value) };
       });
     }
   }

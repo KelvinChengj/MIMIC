@@ -1,11 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerBuiltinBlocks } from './index';
 import { blockLibrary, createBlock, footprintOf, getBlockDef, listBlockDefs, normalizeBlock, registerBlock } from './registry';
-import { evaluateLamp } from '../lib/blocks';
+import { evaluateLamp, lampTags } from '../lib/blocks';
 import { SCALE } from './layout';
 import { fetchSnapshot } from '../lib/fdm';
-import { buildValueGetter } from '../lib/blocks';
-import { defaultRules } from '../state/RulesContext';
+import { buildTagIndex } from '../lib/blocks';
 import type { PageBlock } from '../types';
 import type { BlockDefinition, BlockEnv } from './types';
 
@@ -13,7 +12,7 @@ beforeAll(() => registerBuiltinBlocks());
 
 const env = (): BlockEnv => {
   const snapshot = fetchSnapshot(0, 0);
-  return { snapshot, rules: defaultRules(), getValue: buildValueGetter(snapshot) };
+  return { snapshot, index: buildTagIndex(snapshot) };
 };
 
 describe('積木庫 registry', () => {
@@ -75,11 +74,11 @@ describe('積木庫 registry', () => {
       }
     }
   });
-  it('舊格式（只有燈號積木）轉成新格式', () => {
-    const legacy = { id: 'b1', title: '舊', x: 10, y: 20, vars: [{ name: 'A' }], valueExpr: '', unit: 'ppb', redExpr: 'A > 1', yellowExpr: '' };
+  it('舊格式（只有燈號積木、自訂算式）轉成新格式：只保留選過的 Tag', () => {
+    const legacy = { id: 'b1', title: '舊', x: 10, y: 20, vars: [{ name: 'A', site: 'f18p2', tag: 'UPW-POL-02.TOC' }, { name: 'B' }], valueExpr: '', unit: 'ppb', redExpr: 'A > 1', yellowExpr: '' };
     expect(normalizeBlock(legacy)).toEqual({
       id: 'b1', type: 'lamp', title: '舊', size: 'M', x: 10, y: 20,
-      props: { vars: [{ name: 'A' }], valueExpr: '', unit: 'ppb', redExpr: 'A > 1', yellowExpr: '' },
+      props: { tags: [{ site: 'f18p2', tag: 'UPW-POL-02.TOC' }] },
     });
     const modern = { id: 'b2', type: 'text', title: '', size: 'L', x: 0, y: 0, props: { text: 'x' } };
     expect(normalizeBlock(modern)).toEqual(modern);
@@ -87,8 +86,8 @@ describe('積木庫 registry', () => {
   });
   it('各積木對整頁燈號的貢獻', () => {
     const e = env();
-    const lamp = { ...createBlock('lamp', []), props: { vars: [{ name: 'A', site: 'f18p2', tag: 'UPW-POL-02.TOC' }], valueExpr: '', unit: '', redExpr: 'A > 3', yellowExpr: '' } };
-    expect(getBlockDef('lamp')!.status!(lamp, e)).toBe(evaluateLamp(lamp.props, e.getValue).status);
+    const lamp = { ...createBlock('lamp', []), props: { tags: [{ site: 'f18p2', tag: 'UPW-POL-02.TOC' }] } };
+    expect(getBlockDef('lamp')!.status!(lamp, e)).toBe(evaluateLamp(lampTags(lamp.props), e.index).status);
     expect(getBlockDef('lamp')!.status!(lamp, e)).toBe('red');
     const wall = { ...createBlock('wall', []), props: { sites: ['f18p2'], systems: ['upw'] } };
     expect(getBlockDef('wall')!.status!(wall, e)).toBe('red');

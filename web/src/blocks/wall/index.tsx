@@ -23,8 +23,8 @@ function WallTile({ to, siteId, systemId, size }: { to: string; siteId: string; 
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId)!;
   if (!cell) return <div className="tile tile--gray" />;
-  const { summary, sys, rules } = cell;
-  const text = tileText(summary, rules.staleMinutes);
+  const { summary, sys } = cell;
+  const text = tileText(summary, sys.defaultStaleMinutes);
   return (
     <StatusTile
       to={to}

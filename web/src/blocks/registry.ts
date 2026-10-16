@@ -56,12 +56,9 @@ export function normalizeBlock(raw: any): PageBlock {
     size: 'M',
     x: raw.x ?? 24,
     y: raw.y ?? 24,
+    // 條件算式已不再使用，只保留選過的 Tag
     props: {
-      vars: raw.vars ?? [],
-      valueExpr: raw.valueExpr ?? '',
-      unit: raw.unit ?? '',
-      redExpr: raw.redExpr ?? '',
-      yellowExpr: raw.yellowExpr ?? '',
+      tags: (raw.vars ?? []).flatMap((v: { site?: string; tag?: string }) => (v.site && v.tag ? [{ site: v.site, tag: v.tag }] : [])),
     },
   };
 }

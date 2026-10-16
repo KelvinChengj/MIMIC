@@ -12,7 +12,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'upw',
     name: '超純水',
     short: 'UPW',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'TOC', label: 'TOC', unit: 'ppb', decimals: 1, defaults: { yellowHigh: 1.0, redHigh: 3.0 } },
@@ -36,7 +35,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'bulk',
     name: '大宗氣體',
     short: 'BSG',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'PRS', label: '壓力', unit: 'kgf/cm²', decimals: 1, defaults: { yellowLow: 7.0, redLow: 6.5 } },
@@ -61,7 +59,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'chem',
     name: '化學品',
     short: 'CHEM',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'LVL', label: '液位', unit: '%', decimals: 0, defaults: { yellowLow: 30, redLow: 15 } },
@@ -85,7 +82,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'power',
     name: '電力',
     short: 'PWR',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'VLT', label: '電壓', unit: 'V', decimals: 0, defaults: { yellowHigh: 395, redHigh: 405, yellowLow: 365, redLow: 355 } },
@@ -110,7 +106,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'mau',
     name: '空調 MAU',
     short: 'MAU',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'TMP', label: '送風溫度', unit: '°C', decimals: 1, defaults: { yellowHigh: 23.5, redHigh: 25, yellowLow: 20.5, redLow: 19 } },
@@ -134,7 +129,6 @@ export const SYSTEMS: SystemDef[] = [
     id: 'exhaust',
     name: '排氣',
     short: 'EXH',
-    defaultConsecutive: 3,
     defaultStaleMinutes: 15,
     metrics: [
       { code: 'DP', label: '管道負壓', unit: 'Pa', decimals: 0, defaults: { yellowHigh: -200, redHigh: -150 } },

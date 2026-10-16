@@ -1,8 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { PAGES, pageBySlug } from '../catalog/catalog';
 import { fetchSnapshot } from '../lib/fdm';
-import { buildValueGetter } from '../lib/blocks';
-import { defaultRules } from '../state/RulesContext';
+import { buildTagIndex } from '../lib/blocks';
 import { builtinLayoutPage, defaultWallLayout, isWallPage } from './builtin';
 import { cellSummary } from './cells';
 import { OVERVIEW_HOST, pageHost } from './host';
@@ -16,7 +15,7 @@ beforeAll(() => registerBuiltinBlocks());
 
 const env = (): BlockEnv => {
   const snapshot = fetchSnapshot(0, 0);
-  return { snapshot, rules: defaultRules(), getValue: buildValueGetter(snapshot) };
+  return { snapshot, index: buildTagIndex(snapshot) };
 };
 
 describe('內建燈號牆 = 燈號積木 + 文字積木', () => {

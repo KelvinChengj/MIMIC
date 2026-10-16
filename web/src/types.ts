@@ -1,7 +1,11 @@
 /** 紅異常 / 黃部分異常 / 綠正常 / 灰無資料 */
 export type Status = 'red' | 'yellow' | 'green' | 'gray';
 
-/** 單一量測類型（Tag 名稱 `.` 後的尾碼，例如 TOC、RES）的管制門檻；留空代表不管制 */
+/**
+ * 單一量測類型（Tag 名稱 `.` 後的尾碼，例如 TOC、RES）的界限。
+ * 只給「模擬 FDM」用來產生 isOOS / isOOC 旗標：red＝規格界限（超出即 OOS），yellow＝管制界限（超出即 OOC）。
+ * 前端本身不再用門檻判斷燈號。
+ */
 export interface MetricRule {
   yellowHigh?: number;
   yellowLow?: number;
@@ -30,8 +34,6 @@ export interface SystemDef {
   id: string;
   name: string;
   short: string;
-  /** 紅燈需連續成立的點數 */
-  defaultConsecutive: number;
   /** 超過幾分鐘沒有 FDM 資料就判定為灰燈 */
   defaultStaleMinutes: number;
   metrics: MetricDef[];
@@ -46,21 +48,17 @@ export interface SiteDef {
   dropTags: number;
 }
 
-export interface SystemRules {
-  consecutive: number;
-  staleMinutes: number;
-  metrics: Record<string, MetricRule>;
-}
-export type RulesConfig = Record<string, SystemRules>;
-
-/** 近期歷史，最後一筆為最新值；null = 無資料 */
-export type History = (number | null)[];
-
+/** FDM 回傳的單一 Tag：最新值與 FDM 判定的旗標 */
 export interface TagReading {
   name: string;
   desc: string;
   metric: string;
-  history: History;
+  /** 最新值；null＝沒有收到資料 */
+  value: number | null;
+  /** Out of Spec：超出規格界限 → 紅燈 */
+  isOOS: boolean;
+  /** Out of Control：超出管制界限（未超規格）→ 黃燈 */
+  isOOC: boolean;
 }
 export type Snapshot = {
   updatedAt: number;
@@ -94,35 +92,23 @@ export interface PageDef {
 /** 積木尺寸：小 / 中 / 大 */
 export type BlockSize = 'S' | 'M' | 'L';
 
-export interface BlockVar {
-  /** 算式中使用的名稱：A、B、C… */
-  name: string;
-  site?: string;
-  tag?: string;
+/** 燈號積木選取的一個 Tag（廠區 + Tag 名稱） */
+export interface TagRef {
+  site: string;
+  tag: string;
 }
 
-/** 燈號下方文字：auto＝有顯示值就顯示數值、否則狀態；status＝只顯示狀態文字；both＝兩者都顯示 */
-export type LampCaption = 'auto' | 'status' | 'both';
-
-/** 「燈號積木」(type: 'lamp') 的內容 */
+/**
+ * 「燈號積木」(type: 'lamp') 的內容。燈號完全由 FDM 旗標決定：
+ * 任一 Tag isOOS → 紅；否則任一 isOOC → 黃；都正常 → 綠；全部無資料 → 灰。
+ */
 export interface LampProps {
-  vars: BlockVar[];
-  /** 顯示值算式（可空白）。例：(A + B) / 2 */
-  valueExpr: string;
-  unit: string;
-  /** 紅燈條件。例：A > 3 or B < 17.5 */
-  redExpr: string;
-  /** 黃燈條件；紅燈不成立時才判斷 */
-  yellowExpr: string;
-  /** 燈號下方文字怎麼顯示（舊資料沒有這個欄位，視為 auto） */
-  caption?: LampCaption;
-  /**
-   * 資料來源：有值＝直接顯示某廠區某系統的整體燈號（沿用平台的紅黃綠判定規則，
-   * 文字如「3 台異常」，點了下鑽）；沒有＝用上面的資料點與算式自己判斷。
-   */
+  /** 選取的 Tag */
+  tags?: TagRef[];
+  /** 整個系統：顯示某廠區某系統所有 Tag 的彙整燈號（文字如「3 台異常」，點了下鑽） */
   source?: { site: string; system: string };
-  /** 自訂各燈號的狀態文字，空白＝用預設（異常 / 部分異常 / 正常） */
-  labels?: Partial<Record<'red' | 'yellow' | 'green', string>>;
+  /** 舊版（自訂算式時期）的資料點；讀取時轉成 tags，條件算式已不再使用 */
+  vars?: { name: string; site?: string; tag?: string }[];
 }
 
 /**

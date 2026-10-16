@@ -2,7 +2,7 @@ import { SITES, SYSTEMS } from '../../catalog/catalog';
 import { RefreshIcon } from '../../components/Icons';
 import { Dot, Lamp, StatusBadge } from '../../components/Lamp';
 import { PathChip, useSpin } from '../../components/PageParts';
-import { describeRules } from '../../lib/status';
+import { ruleLines } from '../../lib/status';
 import { useCell } from '../../state/derived';
 import { useFdm } from '../../state/FdmContext';
 import { cellsStatus } from '../cells';
@@ -31,8 +31,8 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
   const sys = SYSTEMS.find((s) => s.id === systemId);
   if (!cell || !site || !sys) return <section className="card">找不到這個廠區或系統</section>;
 
-  const { summary, rules } = cell;
-  const lines = describeRules(sys, rules).slice(0, LINES[block.size]);
+  const { summary } = cell;
+  const lines = ruleLines(sys.defaultStaleMinutes).slice(0, LINES[block.size]);
   return (
     <section
       className={`card summary summary--${summary.status} summary--${block.size}`}
@@ -44,7 +44,7 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
         {lines.length > 0 && (
           <ul className="rule-lines">
             {lines.map((l) => (
-              <li key={l.status} title={l.title || undefined}>
+              <li key={l.status}>
                 <Dot status={l.status} /><b>{SIGN[l.status]}</b><span>{l.text}</span>
               </li>
             ))}

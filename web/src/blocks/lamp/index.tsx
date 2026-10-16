@@ -1,9 +1,8 @@
-import { evaluateLamp } from '../../lib/blocks';
-import { cellsStatus } from '../cells';
-import { SCALE } from '../layout';
-import { LampSimProvider } from './sim';
+import { evaluateLamp, lampTags } from '../../lib/blocks';
 import type { LampProps } from '../../types';
+import { cellsStatus } from '../cells';
 import { LampIcon } from '../icons';
+import { SCALE } from '../layout';
 import type { BlockDefinition } from '../types';
 import { LampExplain } from './Explain';
 import { LampEditor } from './LampEditor';
@@ -15,18 +14,17 @@ const BASE = { w: 96, h: 88 };
 export const lampBlock: BlockDefinition<LampProps> = {
   type: 'lamp',
   label: '燈號',
-  description: '挑選 Tag，用加減乘除與 and / or 寫出紅、黃燈條件，顯示一顆燈。',
+  description: '選取 Tag，依 FDM 的 OOS / OOC 自動亮紅、黃、綠燈。',
   category: '燈號',
   icon: <LampIcon />,
-  defaultProps: () => ({ vars: [], valueExpr: '', unit: '', redExpr: '', yellowExpr: '', caption: 'auto', labels: {} }),
+  defaultProps: () => ({ tags: [] }),
   defaultTitle: (n) => `燈號 ${n}`,
   fixedHeight: true,
   footprint: (b) => ({ w: BASE.w * SCALE[b.size], h: BASE.h * SCALE[b.size] }),
   Render: LampRender,
   Editor: LampEditor,
   Explain: LampExplain,
-  EditorProvider: LampSimProvider,
   explainable: (b) => !b.props.source,
   status: (b, env) =>
-    b.props.source ? cellsStatus(env, [b.props.source.site], [b.props.source.system]) : evaluateLamp(b.props, env.getValue).status,
+    b.props.source ? cellsStatus(env, [b.props.source.site], [b.props.source.system]) : evaluateLamp(lampTags(b.props), env.index).status,
 };

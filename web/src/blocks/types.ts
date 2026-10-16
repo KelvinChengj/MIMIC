@@ -1,13 +1,13 @@
 import type { ComponentType, ReactNode } from 'react';
-import type { ValueGetter } from '../lib/blocks';
-import type { BlockSize, PageBlock, RulesConfig, Snapshot, Status } from '../types';
+import type { TagIndex } from '../lib/blocks';
+import type { BlockSize, PageBlock, Snapshot, Status } from '../types';
 import type { Footprint } from './layout';
 
 /** 積木判定燈號時可取用的資料 */
 export interface BlockEnv {
   snapshot: Snapshot;
-  rules: RulesConfig;
-  getValue: ValueGetter;
+  /** FDM 最新回傳，依「廠區|Tag」查詢 */
+  index: TagIndex;
 }
 
 /** 積木所在的頁面環境 */

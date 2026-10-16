@@ -8,7 +8,6 @@ import { ExplorePage } from './pages/ExplorePage';
 import { PageRoute } from './pages/PageRoute';
 import { FavoritesProvider } from './state/FavoritesContext';
 import { FdmProvider } from './state/FdmContext';
-import { RulesProvider } from './state/RulesContext';
 import { UiProvider } from './state/UiContext';
 import { UserPagesProvider } from './state/UserPagesContext';
 
@@ -22,7 +21,6 @@ export default function App() {
     <Router>
       <UiProvider>
         <FdmProvider>
-          <RulesProvider>
             <FavoritesProvider>
               <UserPagesProvider>
               <Routes>
@@ -37,7 +35,6 @@ export default function App() {
               </Routes>
               </UserPagesProvider>
             </FavoritesProvider>
-          </RulesProvider>
         </FdmProvider>
       </UiProvider>
     </Router>

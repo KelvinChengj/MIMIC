@@ -38,7 +38,7 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
     systems.forEach((sys, c) =>
       out.push(
         mk(`cell-${site.id}-${sys.id}`, 'lamp', {
-          vars: [], valueExpr: '', unit: '', redExpr: '', yellowExpr: '', caption: 'auto', labels: {},
+          tags: [],
           source: { site: site.id, system: sys.id },
         } satisfies LampProps, { title: `${site.label} ${sys.name}`, size: 'S', x: X0 + c * (TILE.w + GAP_X), y }),
       ),

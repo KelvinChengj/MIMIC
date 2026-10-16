@@ -7,7 +7,7 @@ import type { BlockEnv } from './types';
 export function cellSummary(env: BlockEnv, siteId: string, systemId: string): Summary | null {
   const sys = systemById(systemId);
   const readings = env.snapshot.data[siteId]?.[systemId];
-  return sys && readings ? evaluateSystem(sys, readings, env.rules[systemId]).summary : null;
+  return sys && readings ? evaluateSystem(sys, readings).summary : null;
 }
 
 export function cellsStatus(env: BlockEnv, siteIds: string[], systemIds: string[]): Status | null {

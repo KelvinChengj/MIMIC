@@ -1,31 +1,22 @@
-import type { History, MetricDef, MetricRule, Status, SystemDef, SystemRules, TagReading } from '../types';
+import type { MetricDef, Status, SystemDef, TagReading } from '../types';
 
 export const STATUS_META: Record<Status, { label: string; badge: string; legend: string }> = {
-  red: { label: '紅', badge: '異常', legend: 'Red: Abnormal (any tag beyond the red limit)' },
-  yellow: { label: '黃', badge: '部分異常', legend: 'Yellow: Partially abnormal (some tags beyond the yellow limit)' },
+  red: { label: '紅', badge: '異常', legend: 'Red: Abnormal (any tag out of spec, OOS)' },
+  yellow: { label: '黃', badge: '部分異常', legend: 'Yellow: Partially abnormal (some tags out of control, OOC)' },
   green: { label: '綠', badge: '正常', legend: 'Green: Normal' },
   gray: { label: '灰', badge: '無資料', legend: 'Gray: No data (no FDM data received within the set time)' },
 };
 
 export const STATUS_ORDER: Status[] = ['red', 'yellow', 'gray', 'green'];
 
-const beyondRed = (r: MetricRule, v: number | null) =>
-  v != null && ((r.redHigh != null && v > r.redHigh) || (r.redLow != null && v < r.redLow));
-const beyondYellow = (r: MetricRule, v: number | null) =>
-  v != null && ((r.yellowHigh != null && v > r.yellowHigh) || (r.yellowLow != null && v < r.yellowLow));
-
 /**
- * 單一 Tag 的燈號。
- * - 最新值為 null → 灰
- * - 最近 `consecutive` 點全部超出紅色管制 → 紅
- * - 最新值超出黃（或紅但未連續成立）→ 黃
+ * 單一 Tag 的燈號，完全依 FDM 回傳的旗標：
+ * 無資料 → 灰；isOOS → 紅；isOOC → 黃；其他 → 綠
  */
-export function tagStatus(rule: MetricRule, history: History, consecutive: number): Status {
-  const latest = history[history.length - 1] ?? null;
-  if (latest == null) return 'gray';
-  const recent = history.slice(-Math.max(1, consecutive));
-  if (recent.length >= consecutive && recent.every((v) => beyondRed(rule, v))) return 'red';
-  if (beyondYellow(rule, latest) || beyondRed(rule, latest)) return 'yellow';
+export function tagStatus(r: Pick<TagReading, 'value' | 'isOOS' | 'isOOC'>): Status {
+  if (r.value == null) return 'gray';
+  if (r.isOOS) return 'red';
+  if (r.isOOC) return 'yellow';
   return 'green';
 }
 
@@ -38,6 +29,7 @@ export interface Summary {
   gray: number;
 }
 
+/** 多個 Tag 彙整：任一紅 → 紅；否則任一黃 → 黃；否則有綠 → 綠；全部無資料 → 灰 */
 export function summarize(statuses: Status[]): Summary {
   const s: Summary = { status: 'gray', total: statuses.length, red: 0, yellow: 0, green: 0, gray: 0 };
   statuses.forEach((x) => (s[x] += 1));
@@ -53,26 +45,15 @@ export function worstOf(statuses: Status[]): Status {
 
 export interface EvaluatedTag extends TagReading {
   status: Status;
-  value: number | null;
-  rule: MetricRule;
   metricDef?: MetricDef;
 }
 
-export function evaluateSystem(
-  sys: SystemDef,
-  readings: TagReading[],
-  rules: SystemRules,
-): { tags: EvaluatedTag[]; summary: Summary } {
-  const tags = readings.map((t): EvaluatedTag => {
-    const rule = rules.metrics[t.metric] ?? {};
-    return {
-      ...t,
-      rule,
-      metricDef: sys.metrics.find((m) => m.code === t.metric),
-      value: t.history[t.history.length - 1] ?? null,
-      status: tagStatus(rule, t.history, rules.consecutive),
-    };
-  });
+export function evaluateSystem(sys: SystemDef, readings: TagReading[]): { tags: EvaluatedTag[]; summary: Summary } {
+  const tags = readings.map((t): EvaluatedTag => ({
+    ...t,
+    metricDef: sys.metrics.find((m) => m.code === t.metric),
+    status: tagStatus(t),
+  }));
   return { tags, summary: summarize(tags.map((t) => t.status)) };
 }
 
@@ -90,48 +71,12 @@ export function formatValue(v: number | null, decimals: number): string {
   return v == null ? '—' : v.toFixed(decimals);
 }
 
-/** 門檻顯示時至少補到該量測的小數位（18 → 18.0），使用者輸入更多位則照原樣 */
-const fmtLimit = (v: number, decimals: number) => (decimals > 0 && Number.isInteger(v) ? v.toFixed(decimals) : String(v));
-
-function conditions(sys: SystemDef, rules: SystemRules, level: 'yellow' | 'red'): string[] {
-  const out: string[] = [];
-  for (const m of sys.metrics) {
-    const r = rules.metrics[m.code] ?? {};
-    const hi = level === 'red' ? r.redHigh : r.yellowHigh;
-    const lo = level === 'red' ? r.redLow : r.yellowLow;
-    const unit = m.unit ? ` ${m.unit}` : '';
-    if (hi != null) out.push(`${m.label} > ${fmtLimit(hi, m.decimals)}${unit}`);
-    if (lo != null) out.push(`${m.label} < ${fmtLimit(lo, m.decimals)}${unit}`);
-  }
-  return out;
-}
-
-const MAX_SHOWN = 3;
-function joinConds(list: string[]): { short: string; full: string } {
-  const full = list.length ? list.join(' 或 ') : '尚未設定門檻';
-  if (list.length <= MAX_SHOWN) return { short: full, full };
-  return { short: `${list.slice(0, MAX_SHOWN).join(' 或 ')} 等 ${list.length} 項`, full };
-}
-
-/** 下鑽頁頭部的四行燈號規則說明（由實際設定組出，改門檻後會同步） */
-export function describeRules(sys: SystemDef, rules: SystemRules) {
-  const red = joinConds(conditions(sys, rules, 'red'));
-  const yellow = joinConds(conditions(sys, rules, 'yellow'));
+/** 燈號規則說明（固定，由 FDM 旗標決定，使用者不需要設定） */
+export function ruleLines(staleMinutes: number): { status: Status; text: string }[] {
   return [
-    { status: 'red' as const, text: `任一 Tag 超出紅色管制（${red.short}），連續 ${rules.consecutive} 點成立`, title: red.full },
-    { status: 'yellow' as const, text: `無紅燈，且任一 Tag 超出黃色管制（${yellow.short}）`, title: yellow.full },
-    { status: 'green' as const, text: '所有 Tag 皆在管制範圍內', title: '' },
-    { status: 'gray' as const, text: `Tag 超過 ${rules.staleMinutes} 分鐘未收到 FDM 資料`, title: '' },
+    { status: 'red', text: '任一 Tag 為 OOS（FDM 判定超出規格）' },
+    { status: 'yellow', text: '無紅燈，且任一 Tag 為 OOC（FDM 判定超出管制）' },
+    { status: 'green', text: '所有 Tag 皆在管制範圍內' },
+    { status: 'gray', text: `Tag 超過 ${staleMinutes} 分鐘未收到 FDM 資料` },
   ];
-}
-
-/** 門檻合理性檢查：紅色管制必須比黃色更外側 */
-export function validateMetric(r: MetricRule): string[] {
-  const errs: string[] = [];
-  if (r.yellowHigh != null && r.redHigh != null && r.redHigh < r.yellowHigh) errs.push('紅燈上限不可低於黃燈上限');
-  if (r.yellowLow != null && r.redLow != null && r.redLow > r.yellowLow) errs.push('紅燈下限不可高於黃燈下限');
-  const hi = r.yellowHigh ?? r.redHigh;
-  const lo = r.yellowLow ?? r.redLow;
-  if (hi != null && lo != null && lo >= hi) errs.push('下限必須小於上限');
-  return errs;
 }

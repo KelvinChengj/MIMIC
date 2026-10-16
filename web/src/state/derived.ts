@@ -1,31 +1,27 @@
 import { useMemo } from 'react';
-import { buildValueGetter } from '../lib/blocks';
 import { getBlockDef } from '../blocks/registry';
 import type { BlockEnv } from '../blocks/types';
-import { useUserPages } from './UserPagesContext';
-import { SYSTEMS, systemById } from '../catalog/catalog';
+import { pageBySlug, SYSTEMS, systemById } from '../catalog/catalog';
+import { buildTagIndex } from '../lib/blocks';
 import { evaluateSystem, worstOf } from '../lib/status';
-import { pageBySlug } from '../catalog/catalog';
 import type { PageDef, Status } from '../types';
 import { useFdm } from './FdmContext';
-import { useRules } from './RulesContext';
+import { useUserPages } from './UserPagesContext';
 
-/** 某廠區 × 系統目前的判定結果 */
+/** 某廠區 × 系統目前的燈號（依 FDM 旗標） */
 export function useCell(siteId: string, systemId: string) {
   const { snapshot } = useFdm();
-  const { rules } = useRules();
   return useMemo(() => {
     const sys = systemById(systemId);
     const readings = snapshot.data[siteId]?.[systemId];
     if (!sys || !readings) return null;
-    return { sys, rules: rules[systemId], ...evaluateSystem(sys, readings, rules[systemId]) };
-  }, [snapshot, rules, siteId, systemId]);
+    return { sys, ...evaluateSystem(sys, readings) };
+  }, [snapshot, siteId, systemId]);
 }
 
-/** 頁面（側欄、Explore）上的整體燈號 */
+/** 頁面（Explore）上的整體燈號 */
 export function usePageStatus() {
   const { snapshot } = useFdm();
-  const { rules } = useRules();
   return useMemo(() => {
     return (page: PageDef): Status => {
       if (!page.scope) return page.fixedStatus ?? 'gray';
@@ -34,24 +30,24 @@ export function usePageStatus() {
         for (const sysId of page.scope.systems) {
           const sys = SYSTEMS.find((s) => s.id === sysId);
           const readings = snapshot.data[siteId]?.[sysId];
-          if (sys && readings) statuses.push(evaluateSystem(sys, readings, rules[sysId]).summary.status);
+          if (sys && readings) statuses.push(evaluateSystem(sys, readings).summary.status);
         }
       return worstOf(statuses);
     };
-  }, [snapshot, rules]);
+  }, [snapshot]);
 }
 
-export function useValueGetter() {
+/** FDM 最新回傳，依「廠區|Tag」查詢 */
+export function useTagIndex() {
   const { snapshot } = useFdm();
-  return useMemo(() => buildValueGetter(snapshot), [snapshot]);
+  return useMemo(() => buildTagIndex(snapshot), [snapshot]);
 }
 
-/** 積木判定燈號所需的資料（FDM 快照、門檻設定、單點取值） */
+/** 積木判定燈號所需的資料（FDM 快照與 Tag 索引） */
 export function useBlockEnv(): BlockEnv {
   const { snapshot } = useFdm();
-  const { rules } = useRules();
-  const getValue = useValueGetter();
-  return useMemo(() => ({ snapshot, rules, getValue }), [snapshot, rules, getValue]);
+  const index = useTagIndex();
+  return useMemo(() => ({ snapshot, index }), [snapshot, index]);
 }
 
 export interface ResolvedPage {
