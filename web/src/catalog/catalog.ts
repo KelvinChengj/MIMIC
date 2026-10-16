@@ -176,7 +176,7 @@ export const PAGES: PageDef[] = [
   { slug: 'exhaust', title: 'Exhaust 廢氣系統', scope: { sites: allSites, systems: ['exhaust'] } },
   { slug: 'gas', title: 'Gas 特殊氣體', scope: { sites: allSites, systems: ['bulk'] } },
   { slug: 'chemical', title: 'Chemical 化學品', scope: { sites: allSites, systems: ['chem'] } },
-  { slug: 'daily-open10', title: '開門十件事', fixedStatus: 'green' },
+  { slug: 'daily-open10', title: '我的MIMIC', fixedStatus: 'green' },
   { slug: 'abnormal-track', title: '異常追蹤', fixedStatus: 'yellow' },
   { slug: 'equipment-maint', title: '設備維護', fixedStatus: 'green' },
   { slug: 'energy-saving', title: '節能專案', fixedStatus: 'green' },
