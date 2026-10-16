@@ -27,7 +27,7 @@ function SystemExplain({ block }: { block: PageBlock<LampProps> }) {
   return (
     <div className="pv">
       <p className="pv__msg">{site?.label} · {sys.name} {sys.short}：紅 {cell.summary.red}、黃 {cell.summary.yellow}、灰 {cell.summary.gray}，共 {cell.summary.total} 個 Tag</p>
-      <h4>判定規則（系統共用，可在「門檻設定」調整）</h4>
+      <h4>判定規則（系統共用）</h4>
       <ul className="pv__steps">
         {describeRules(sys, cell.rules).map((l) => (
           <li key={l.status} className={cell.summary.status === l.status ? 'is-decisive' : ''}>

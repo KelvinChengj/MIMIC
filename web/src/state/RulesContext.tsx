@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import { SYSTEMS } from '../catalog/catalog';
-import type { MetricRule, RulesConfig, SystemDef, SystemRules } from '../types';
+import type { RulesConfig, SystemDef, SystemRules } from '../types';
 import { usePersistentState } from './storage';
 
 export const defaultRulesFor = (sys: SystemDef): SystemRules => ({
@@ -49,6 +49,3 @@ export function useRules() {
   if (!v) throw new Error('useRules 必須在 RulesProvider 內使用');
   return v;
 }
-
-export const cloneMetricRules = (m: Record<string, MetricRule>) =>
-  Object.fromEntries(Object.entries(m).map(([k, v]) => [k, { ...v }]));

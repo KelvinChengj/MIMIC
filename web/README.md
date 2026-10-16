@@ -17,9 +17,8 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 | 網址 | 內容 |
 |---|---|
 | `/p/overview` | 首頁燈號牆：由「燈號」與「文字」積木組成的畫布（每個廠區 × 系統是一顆系統燈號積木），點燈號下鑽 |
-| `/p/:slug/:site/:system` | 下鑽頁：規則說明、Tag name / Description / Value，可切「僅顯示異常 / 全部 Tag」 |
+| `/p/:slug/:site/:system` | 下鑽頁：規則說明、Tag name / Description / Value，可切「僅顯示異常 / 全部 Tag」，Refresh Values 重新取值 |
 | `/p/:slug/edit` | 編輯模式：積木畫布（左側積木庫）。自建頁面與內建燈號牆頁面共用；內建頁面可「還原預設版面」 |
-| `/p/:slug/thresholds?system=upw` | 門檻設定：黃 / 紅燈上下限、紅燈連續成立點數、無資料判定分鐘；按 **Test** 以目前 FDM 值試算並與已儲存設定比較，確認後 Save。入口：燈號牆頁與下鑽頁的「門檻設定」 |
 | `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |
 | `/p/:slug` | 其他頁面（Favorites 側欄、Explore 結果）；單一廠區 × 系統的頁面直接顯示下鑽內容 |
 
@@ -41,7 +40,7 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 
 燈號積木的**資料來源**有兩種：
 
-- **系統燈號**：選廠區與系統，沿用平台的紅、黃、綠判定規則（門檻在「門檻設定」調整）。
+- **系統燈號**：選廠區與系統，沿用平台的紅、黃、綠判定規則（門檻目前使用 `catalog.ts` 的預設值，暫無設定畫面）。
 - **自訂算式**：自己挑 Tag、寫算式（見下）。
 
 ### 自建頁面
@@ -79,11 +78,13 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 src/catalog/catalog.ts    廠區、系統、量測類型門檻預設值、Tag 清單、頁面目錄（含 Explore 資料）
 src/lib/fdm.ts          FDM 資料來源（模擬）。接真實 API 只需替換 fetchSnapshot
 src/lib/status.ts       燈號判定、彙整、規則文字、門檻驗證（純函式，有測試）
-src/state/              FDM / 門檻設定 / Favorites / UI 的 Context
+src/state/              FDM / 門檻 / Favorites / UI 的 Context
 src/pages/              WallPage、DrillPage、EditPage、ExplorePage、PageRoute
 src/components/         Layout、Sidebar、Topbar、Lamp 等
 ```
 
 示範資料內建幾個情境：F18P2 超純水 3 紅 2 黃 1 灰、F18P7 排氣整區無資料（灰）、F18P1 電力有一點尖峰值但未連續 3 點（黃）——在編輯模式把「連續成立點數」改成 1 再按 Test 就會看到它變紅。
 
-> 這是前端設計稿：沒有後端與登入，門檻設定只存在瀏覽器 localStorage。
+> 這是前端設計稿：沒有後端與登入，自建頁面與版面只存在瀏覽器 localStorage。
+>
+> 「門檻設定」（編輯黃 / 紅燈門檻並 Test 試算的頁面）已先移除以精簡設計；判定邏輯 `lib/status.ts` 與預設門檻仍在，需要時可從 git 歷史（commit `a303852` 的 `src/pages/EditPage.tsx`）找回。

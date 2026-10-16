@@ -66,9 +66,9 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
 }
 
 /** 內建下鑽頁 = 系統摘要積木 + Tag 清單積木 */
-export function drillPageBlocks(site: string, system: string, editTo: string): PageBlock[] {
+export function drillPageBlocks(site: string, system: string): PageBlock[] {
   return [
-    mk('summary', 'summary', { site, system, editTo }, { size: 'L' }),
+    mk('summary', 'summary', { site, system, showActions: true }, { size: 'L' }),
     mk('tags', 'tags', { site, system, filter: 'abnormal' }, { title: 'Tag 燈號清單' }),
   ];
 }

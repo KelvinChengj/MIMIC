@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
 import { SITES, SYSTEMS } from '../../catalog/catalog';
-import { RefreshIcon, EditIcon } from '../../components/Icons';
+import { RefreshIcon } from '../../components/Icons';
 import { Dot, Lamp, StatusBadge } from '../../components/Lamp';
 import { PathChip, useSpin } from '../../components/PageParts';
 import { describeRules } from '../../lib/status';
@@ -14,8 +13,8 @@ import type { BlockDefinition, RenderProps } from '../types';
 export interface SummaryProps {
   site: string;
   system: string;
-  /** 有值才顯示「Refresh Values / Edit」按鈕與網址（內建下鑽頁用） */
-  editTo?: string;
+  /** true＝顯示「Refresh Values」按鈕與網址（內建下鑽頁用） */
+  showActions?: boolean;
 }
 
 const FOOT = { S: { w: 300, h: 96 }, M: { w: 460, h: 176 }, L: { w: 620, h: 236 } };
@@ -24,7 +23,7 @@ const LINES = { S: 0, M: 2, L: 4 };
 const SIGN = { red: '紅', yellow: '黃', green: '綠', gray: '灰' } as const;
 
 function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
-  const { site: siteId, system: systemId, editTo } = block.props;
+  const { site: siteId, system: systemId, showActions } = block.props;
   const cell = useCell(siteId, systemId);
   const { refresh } = useFdm();
   const [spin, startSpin] = useSpin();
@@ -51,14 +50,13 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
             ))}
           </ul>
         )}
-        {editTo && <PathChip />}
+        {showActions && <PathChip />}
       </div>
-      {editTo && (
+      {showActions && (
         <div className="summary__actions">
           <button className="btn btn--primary" onClick={() => { startSpin(); refresh(); }}>
             <RefreshIcon size={16} className={spin ? 'spin' : ''} /> Refresh Values
           </button>
-          <Link className="btn btn--primary" to={editTo}><EditIcon size={16} /> 門檻設定</Link>
         </div>
       )}
     </section>

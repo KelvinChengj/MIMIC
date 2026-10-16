@@ -118,7 +118,6 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
             <>
               <BackButton />
               <FullscreenButton />
-              {page.builtin && <Link className="btn" to={`/p/${page.slug}/thresholds`}>門檻設定</Link>}
               <Link className="btn btn--primary" to={`/p/${page.slug}/edit`}>Edit</Link>
             </>
           }

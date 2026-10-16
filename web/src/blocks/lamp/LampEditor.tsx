@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { SITES, SYSTEMS } from '../../catalog/catalog';
 import { PlusIcon, TrashIcon } from '../../components/Icons';
 import { SiteSystemSelect } from '../SiteSystemFields';
@@ -89,7 +88,7 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
         <SiteSystemSelect site={source.site} system={source.system} onChange={(patch) => onProps({ source: { ...source, ...(patch.site ? { site: patch.site } : {}), ...(patch.system ? { system: patch.system } : {}) } })} />
         <p className="be__note">
           燈號與下方文字（例如「3 台異常」）由這個系統的紅、黃、綠判定規則決定，點燈號會下鑽到 Tag 清單。
-          要調整門檻，到 <Link to={`/p/overview/thresholds?system=${source.system}`}>門檻設定</Link>。
+          想自己決定紅黃條件，請改選「自訂算式」。
         </p>
       </>
     );

@@ -21,7 +21,7 @@ export function DrillView({ page, siteId, systemId, embedded = false }: { page: 
   const sys = SYSTEMS.find((s) => s.id === systemId);
   const base = `/p/${page.slug}`;
   const host = useMemo(() => pageHost(page), [page]);
-  const blocks = useMemo(() => drillPageBlocks(siteId, systemId, `${base}/thresholds?system=${systemId}`), [siteId, systemId, base]);
+  const blocks = useMemo(() => drillPageBlocks(siteId, systemId), [siteId, systemId]);
   if (!site || !sys) return <NotFound what="燈號頁面" />;
 
   return (
