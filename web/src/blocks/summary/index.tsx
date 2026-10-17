@@ -21,7 +21,7 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
   const { site: siteId, system: systemId, showActions } = block.props;
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId);
-  const sys = SYSTEMS.find((s) => s.id === systemId);
+  const sys = cell?.system;
   if (!cell || !site || !sys) return <section className="card">找不到這個廠區或系統</section>;
   return (
     <SummaryCard
@@ -30,7 +30,7 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
       size={block.size}
       lamp={LAMP[block.size]}
       lines={LINES[block.size]}
-      staleMinutes={sys.defaultStaleMinutes}
+      staleMinutes={sys.staleMinutes}
       showActions={showActions}
       style={mode === 'canvas' ? { width: FOOT[block.size].w } : undefined}
     />

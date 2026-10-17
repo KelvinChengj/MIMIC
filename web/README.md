@@ -23,6 +23,8 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 | `/p/:slug/edit` | 編輯模式：積木畫布（左側積木庫）。自建頁面與內建燈號牆頁面共用；內建頁面可「還原預設版面」 |
 | `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |
 | `/p/:slug` | 其他頁面（Favorites 側欄、Explore 結果）；單一廠區 × 系統的頁面直接顯示下鑽內容 |
+| `/systems` | 系統管理：系統清單（負責人、各廠區 Tag 數、引用頁面數），新增系統 |
+| `/systems/:id` | 編輯系統：基本資料、各廠區的 Tag（向 FDM 檢查後加入）、引用這個系統的頁面、變更紀錄、刪除 |
 
 ### 積木
 
@@ -75,6 +77,23 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 
 左側 Favorites 側欄可收合為窄欄、群組可展開 / 收起、群組內可拖曳排序；狀態存在 localStorage。燈號牆頁的 **Full screen** 進入看板模式（Esc 離開）。
 
+## 系統管理
+
+「系統」= 各廠區包含哪些 Tag，由系統負責人在 `/systems` 維護（示範中所有人都可編輯，正式環境限負責人）。
+
+- **編輯**：選廠區分頁，貼上 Tag 名稱按「檢查並加入」（FDM 找不到的會列出、不會加入），或從 FDM Tag 清單選取；下方即時顯示這個廠區依編輯中內容的燈號。按「儲存變更」才生效，並寫一筆變更紀錄（誰、何時、加入 / 移除哪些 Tag）。
+- **引用**：燈號積木選「整個系統」時只記住「廠區 + 系統代號」，不複製 Tag 清單；系統改了，所有引用的積木與下鑽頁一起更新。
+- **刪除**：內建系統不能刪；新增的系統還有頁面引用時不能刪，會列出是哪些頁面。
+- 系統定義正式環境應存在 MIMIC 後端資料庫；示範版沒有後端，存在瀏覽器 localStorage（`mimic.systems.v1`）。
+
+## FDM 取值時機
+
+- **只在開啟網頁時一次、按重新整理時一次**（頂欄更新時間旁的按鈕、下鑽頁的 Refresh Values），不做定時自動更新。
+- 每次先彙整需要的 Tag：所有系統定義裡的 Tag + 各頁面「選擇 Tag」燈號積木的 Tag，去除重複後**合成一次批次請求**（`fetchLatest`），所有頁面與積木共用這份結果。
+- 取回後**集中算一次**所有廠區 × 系統的燈號（`buildRollup`），積木只查表；積木再多，計算量也不變。
+- 例外：在燈號積木或系統管理**加入新 Tag** 時，只查這幾個新 Tag 並併入目前的資料，不重新取全部。
+- 正式環境建議由 MIMIC 後端統一向 FDM 取值並暫存，不論多少使用者，FDM 每次只被呼叫一次。
+
 ## 燈號判定規則
 
 前端不做門檻判斷，燈號完全依 FDM 回傳的旗標：
@@ -86,16 +105,17 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 ## 結構
 
 ```
-src/catalog/catalog.ts  廠區、系統、Tag 清單（FDM Tag 主檔）、頁面目錄（含 Explore 資料）
-src/lib/fdm.ts          FDM 資料來源（模擬，回傳 value / isOOS / isOOC）。接真實 API 只需替換 fetchSnapshot
+src/catalog/catalog.ts  廠區、系統預設值、模擬 FDM 的 Tag、頁面目錄（含 Explore 資料）
+src/lib/fdm.ts          FDM 資料來源（模擬，一次批次請求回傳 value / isOOS / isOOC）與 FDM Tag 主檔。接真實 API 只需替換 fetchLatest
+src/lib/systems.ts      系統定義預設值、彙整要取值的 Tag、集中計算廠區 × 系統燈號（有測試）
 src/lib/status.ts       依 FDM 旗標判定、彙整、規則文字（純函式，有測試）
-src/state/              FDM / 頁面 / Favorites / UI 的 Context
-src/pages/              DrillPage、ExplorePage、PageRoute、EditRoute、UserPageView
+src/state/              系統定義 / FDM / 頁面 / Favorites / UI 的 Context
+src/pages/              DrillPage、ExplorePage、PageRoute、EditRoute、UserPageView、SystemsPage、SystemEditPage
 src/components/         Layout、Sidebar、Topbar、Lamp 等
 ```
 
 示範資料內建幾個情境：F18P2 超純水 3 OOS、2 OOC、1 無資料；F18P7 排氣整區無資料（灰）；F18P1 電力 TR1 溫度 97 °C 為 OOS（紅）。模擬 FDM 用 `catalog.ts` 各量測類型的界限產生 isOOS / isOOC，接上真實 FDM 後改由 FDM 判定。
 
-> 這是前端設計稿：沒有後端與登入，自建頁面與版面只存在瀏覽器 localStorage。
+> 這是前端設計稿：沒有後端與登入，自建頁面、版面與系統定義只存在瀏覽器 localStorage。
 >
 > 已移除以精簡設計：「門檻設定」頁（可從 commit `a303852` 的 `src/pages/EditPage.tsx` 找回）、燈號積木的自訂算式 / 條件精靈 / 模擬值（可從 commit `a5e732e` 的 `src/lib/expr.ts`、`src/blocks/lamp/` 找回）。

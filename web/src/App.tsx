@@ -7,8 +7,11 @@ import { EditRoute } from './pages/EditRoute';
 import { LampDrillRoute } from './pages/LampDrillPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PageRoute } from './pages/PageRoute';
+import { SystemEditRoute } from './pages/SystemEditPage';
+import { SystemsPage } from './pages/SystemsPage';
 import { FavoritesProvider } from './state/FavoritesContext';
 import { FdmProvider } from './state/FdmContext';
+import { SystemsProvider } from './state/SystemsContext';
 import { UiProvider } from './state/UiContext';
 import { UserPagesProvider } from './state/UserPagesContext';
 
@@ -21,23 +24,28 @@ export default function App() {
   return (
     <Router>
       <UiProvider>
-        <FdmProvider>
-            <FavoritesProvider>
-              <UserPagesProvider>
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route index element={<Navigate to="/p/overview" replace />} />
-                  <Route path="/p/:slug" element={<PageRoute />} />
-                  <Route path="/p/:slug/edit" element={<EditRoute />} />
-                  <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
-                  <Route path="/p/:slug/:site/:system" element={<DrillRoute />} />
-                  <Route path="/explore" element={<ExplorePage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-              </UserPagesProvider>
-            </FavoritesProvider>
-        </FdmProvider>
+        <SystemsProvider>
+          <UserPagesProvider>
+            {/* FDM 取值要知道「需要哪些 Tag」，所以放在系統定義與頁面之內 */}
+            <FdmProvider>
+              <FavoritesProvider>
+                <Routes>
+                  <Route element={<Layout />}>
+                    <Route index element={<Navigate to="/p/overview" replace />} />
+                    <Route path="/p/:slug" element={<PageRoute />} />
+                    <Route path="/p/:slug/edit" element={<EditRoute />} />
+                    <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
+                    <Route path="/p/:slug/:site/:system" element={<DrillRoute />} />
+                    <Route path="/explore" element={<ExplorePage />} />
+                    <Route path="/systems" element={<SystemsPage />} />
+                    <Route path="/systems/:id" element={<SystemEditRoute />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </FavoritesProvider>
+            </FdmProvider>
+          </UserPagesProvider>
+        </SystemsProvider>
       </UiProvider>
     </Router>
   );

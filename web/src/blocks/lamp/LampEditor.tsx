@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { SITES, SYSTEMS } from '../../catalog/catalog';
+import { SITES } from '../../catalog/catalog';
 import { formatValue } from '../../lib/status';
-import { checkTagInput, lampTags, type TagInputResult } from '../../lib/blocks';
+import { checkTagInput, lampTags, tagKey, type TagInputResult } from '../../lib/blocks';
+import { useSystems } from '../../state/SystemsContext';
 import { useFdm } from '../../state/FdmContext';
 import { formatClock } from '../../components/Topbar';
 import { TrashIcon } from '../../components/Icons';
@@ -17,7 +18,8 @@ import { useLampResult } from './LampBlock';
  */
 export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
   const p = block.props;
-  const { snapshot, refresh } = useFdm();
+  const { snapshot, refresh, lookup } = useFdm();
+  const { systems } = useSystems();
   const result = useLampResult(p);
   const tags = lampTags(p);
   const [site, setSite] = useState(tags[0]?.site ?? SITES[0].id);
@@ -28,14 +30,19 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
   const source = p.source;
   // 寫入時一律用 tags，並清掉舊版的資料點欄位
   const setTags = (next: TagRef[]) => onProps({ tags: next, vars: undefined });
+  // 新加入的 Tag 還沒取過值：只查這幾個（不是重新取全部）
+  const addTags = (added: TagRef[]) => {
+    setTags([...tags, ...added]);
+    lookup(added.map((r) => tagKey(r.site, r.tag)));
+  };
   const setMode = (mode: 'tags' | 'system') =>
-    onProps({ source: mode === 'system' ? (source ?? { site: SITES[0].id, system: SYSTEMS[0].id }) : undefined });
+    onProps({ source: mode === 'system' ? (source ?? { site: SITES[0].id, system: systems[0]?.id ?? '' }) : undefined });
 
   const addTyped = (e: FormEvent) => {
     e.preventDefault();
     const r = checkTagInput(text, site, tags);
     setCheck(r);
-    if (r.added.length) setTags([...tags, ...r.added]);
+    if (r.added.length) addTags(r.added);
     if (r.missing.length === 0) setText('');
   };
   const recheck = () => {
@@ -91,7 +98,7 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
         )}
         <div className="be__row">
           <span className="be__or">或</span>
-          <TagBrowser selected={tags} onPick={(t) => setTags([...tags, { site: t.siteId, tag: t.name }])} />
+          <TagBrowser selected={tags} onPick={(t) => addTags([{ site: t.siteId, tag: t.name }])} />
         </div>
       </section>
 

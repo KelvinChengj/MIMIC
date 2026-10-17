@@ -1,4 +1,4 @@
-import type { MetricDef, Status, SystemDef, TagReading } from '../types';
+import type { Status, TagReading } from '../types';
 
 export const STATUS_META: Record<Status, { label: string; badge: string; legend: string }> = {
   red: { label: '紅', badge: '異常', legend: 'Red: Abnormal (any tag out of spec, OOS)' },
@@ -41,20 +41,6 @@ export function summarize(statuses: Status[]): Summary {
 export function worstOf(statuses: Status[]): Status {
   for (const st of STATUS_ORDER) if (statuses.includes(st)) return st;
   return 'gray';
-}
-
-export interface EvaluatedTag extends TagReading {
-  status: Status;
-  metricDef?: MetricDef;
-}
-
-export function evaluateSystem(sys: SystemDef, readings: TagReading[]): { tags: EvaluatedTag[]; summary: Summary } {
-  const tags = readings.map((t): EvaluatedTag => ({
-    ...t,
-    metricDef: sys.metrics.find((m) => m.code === t.metric),
-    status: tagStatus(t),
-  }));
-  return { tags, summary: summarize(tags.map((t) => t.status)) };
 }
 
 /** 磚塊底下的小字 */

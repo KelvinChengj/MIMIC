@@ -3,6 +3,7 @@ import { SITES, SYSTEMS } from '../../catalog/catalog';
 import { StatusTile } from '../../components/StatusTile';
 import { STATUS_META, tileText } from '../../lib/status';
 import { useCell } from '../../state/derived';
+import { useSystems } from '../../state/SystemsContext';
 import type { BlockSize } from '../../types';
 import { cellsStatus } from '../cells';
 import { SiteSystemChecks } from '../SiteSystemFields';
@@ -23,8 +24,8 @@ function WallTile({ to, siteId, systemId, size }: { to: string; siteId: string; 
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId)!;
   if (!cell) return <div className="tile tile--gray" />;
-  const { summary, sys } = cell;
-  const text = tileText(summary, sys.defaultStaleMinutes);
+  const { summary, system: sys } = cell;
+  const text = tileText(summary, sys.staleMinutes);
   return (
     <StatusTile
       to={to}
@@ -43,7 +44,7 @@ function footprint(sites: number, systems: number, size: BlockSize) {
 
 function WallRender({ block, mode, host }: RenderProps<WallProps>) {
   const sites = SITES.filter((s) => block.props.sites.includes(s.id));
-  const systems = SYSTEMS.filter((s) => block.props.systems.includes(s.id));
+  const systems = useSystems().systems.filter((s) => block.props.systems.includes(s.id));
   const t = TILE[block.size];
   const fp = footprint(sites.length, systems.length, block.size);
   return (

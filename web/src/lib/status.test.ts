@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { fetchSnapshot, judge } from './fdm';
-import { evaluateSystem, ruleLines, summarize, tagStatus, tileText, worstOf } from './status';
-import { systemById } from '../catalog/catalog';
+import { fetchLatest, judge } from './fdm';
+import { ruleLines, summarize, tagStatus, tileText, worstOf } from './status';
+import { cellKey, collectTagKeys, defaultSystems, makeEnv } from './systems';
 
 describe('tagStatus：只看 FDM 旗標', () => {
   it('無資料為灰（即使旗標有值也一樣）', () => expect(tagStatus({ value: null, isOOS: true, isOOC: false })).toBe('gray'));
@@ -36,10 +36,13 @@ describe('summarize / worstOf', () => {
 });
 
 describe('示範資料（FDM 模擬）', () => {
-  const snap = fetchSnapshot(0, 0);
-  const run = (site: string, sys: string) => evaluateSystem(systemById(sys)!, snap.data[site][sys]).summary;
+  const systems = defaultSystems();
+  const keys = collectTagKeys(systems, []);
+  const at = (seq: number) => makeEnv(systems, fetchLatest(keys, seq, 0));
+  const env = at(0);
+  const run = (site: string, sys: string) => env.rollup.get(cellKey(site, sys))!.summary;
   it('每個 Tag 都帶有 value / isOOS / isOOC', () => {
-    const r = snap.data.f18p2.upw[0];
+    const r = env.snapshot.readings['f18p2|UPW-POL-02.TOC'];
     expect(Object.keys(r)).toEqual(expect.arrayContaining(['value', 'isOOS', 'isOOC']));
   });
   it('F18P2 超純水：3 OOS、2 OOC、1 無資料，共 8 點', () => {
@@ -58,8 +61,7 @@ describe('示範資料（FDM 模擬）', () => {
     expect(run('f18p2', 'mau').status).toBe('green');
   });
   it('重新整理後正常 Tag 仍是正常', () => {
-    const again = fetchSnapshot(7, 0);
-    expect(evaluateSystem(systemById('upw')!, again.data.f18p1.upw).summary.status).toBe('green');
+    expect(at(7).rollup.get(cellKey('f18p1', 'upw'))!.summary.status).toBe('green');
   });
 });
 

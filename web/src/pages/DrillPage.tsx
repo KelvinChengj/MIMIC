@@ -4,13 +4,16 @@ import { BlockStack } from '../blocks/BlockView';
 import { drillPageBlocks } from '../blocks/builtin';
 import { pageHost } from '../blocks/host';
 import { BackButton, FullscreenButton, NotFound } from '../components/PageParts';
-import { SITES, SYSTEMS, pageBySlug } from '../catalog/catalog';
+import { SITES, pageBySlug } from '../catalog/catalog';
+import { useSystems } from '../state/SystemsContext';
 import type { PageDef } from '../types';
 
 export function DrillRoute() {
   const { slug = '', site = '', system = '' } = useParams();
   const page = pageBySlug(slug);
-  const ok = page?.scope?.sites.includes(site) && page.scope.systems.includes(system);
+  const { getSystem } = useSystems();
+  // 全廠總覽底下也能下鑽到在「系統管理」新增的系統
+  const ok = page?.scope?.sites.includes(site) && (page.scope.systems.includes(system) || (slug === 'overview' && !!getSystem(system)));
   if (!page || !ok) return <NotFound what="燈號頁面" />;
   return <DrillView page={page} siteId={site} systemId={system} />;
 }
@@ -18,7 +21,7 @@ export function DrillRoute() {
 /** 內建下鑽頁：麵包屑 + 「系統摘要」積木 + 「Tag 清單」積木 */
 export function DrillView({ page, siteId, systemId, embedded = false }: { page: PageDef; siteId: string; systemId: string; embedded?: boolean }) {
   const site = SITES.find((s) => s.id === siteId);
-  const sys = SYSTEMS.find((s) => s.id === systemId);
+  const sys = useSystems().getSystem(systemId);
   const base = `/p/${page.slug}`;
   const host = useMemo(() => pageHost(page), [page]);
   const blocks = useMemo(() => drillPageBlocks(siteId, systemId), [siteId, systemId]);

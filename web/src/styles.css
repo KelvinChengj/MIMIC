@@ -564,3 +564,32 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .flag__na { color: #a3a8af; }
 .tagsblk--S .tag-table th.flag small { display: none; }
 .tagsblk--S .tag-table th.flag, .tagsblk--S .tag-table td.flag { width: 60px; }
+
+/* ── 系統管理 ── */
+.side-link { display: flex; align-items: center; gap: 8px; margin: 0 16px 6px; padding: 7px 12px; border-radius: 8px; color: #4b5560; font-size: 13px; }
+.side-link:hover { background: #f4f3f1; color: var(--text); }
+.side-link.is-active { background: #e8edf3; color: var(--text); font-weight: 600; }
+.mono { font-family: var(--mono); }
+.card--flush { padding: 0; overflow-x: auto; }
+.sysnote ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; color: #3d4650; }
+.sysnote b { color: var(--text); }
+.systems-table { min-width: 760px; }
+.systems-table td:first-child { text-align: left; }
+.systems-table td:first-child a { color: #2f5d8a; }
+.systems-table__short { margin-left: 8px; font-size: 12px; color: var(--muted); }
+.systems-table__new { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #e4ecf5; color: #2f5d8a; font-size: 11.5px; font-weight: 600; }
+.sysedit { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.sysedit__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.sysedit__tags { display: grid; gap: 12px; margin-top: 16px; }
+.sysedit__preview { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; font-size: 13.5px; }
+.sysedit__preview small { color: var(--muted); }
+.sysedit__dirty { font-size: 12.5px; color: var(--yellow-text); background: var(--yellow-bg); padding: 2px 10px; border-radius: 999px; }
+.sysedit__why { margin-top: 8px; }
+.taginput__site { height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: #f8f7f5; font-weight: 600; font-size: 13px; }
+.sysrefs, .syslog { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 13px; }
+.sysrefs li { display: grid; gap: 2px; }
+.sysrefs a { color: #2f5d8a; font-weight: 500; }
+.sysrefs small { color: var(--muted); }
+.syslog li { line-height: 1.5; color: #3d4650; }
+.syslog .mono { color: var(--muted); font-size: 12px; margin-right: 4px; }
+@media (max-width: 1100px) { .sysedit { grid-template-columns: minmax(0, 1fr); } }

@@ -40,6 +40,7 @@ export const ExternalIcon = make(<><path d="M14 4h6v6" /><path d="M20 4 10 14" /
 export const TrashIcon = make(<><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13h10l1-13" /><path d="M10 11v6M14 11v6" /></>);
 export const CopyIcon = make(<><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h8" /></>);
 export const DotsIcon = make(<><circle cx="5" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="19" cy="12" r="1.2" fill="currentColor" /></>);
+export const LayersIcon = make(<><path d="m12 3 9 5-9 5-9-5Z" /><path d="m3 13 9 5 9-5" /></>);
 export const CheckIcon = make(<path d="m5 12.5 4.2 4.2L19 7" />);
 
 export function StarIcon({ filled, size = 20 }: { filled?: boolean; size?: number }) {

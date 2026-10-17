@@ -3,16 +3,16 @@ import { registerBuiltinBlocks } from './index';
 import { blockLibrary, createBlock, footprintOf, getBlockDef, listBlockDefs, normalizeBlock, registerBlock } from './registry';
 import { evaluateLamp, lampTags } from '../lib/blocks';
 import { SCALE } from './layout';
-import { fetchSnapshot } from '../lib/fdm';
-import { buildTagIndex } from '../lib/blocks';
+import { fetchLatest } from '../lib/fdm';
+import { collectTagKeys, defaultSystems, makeEnv } from '../lib/systems';
 import type { PageBlock } from '../types';
 import type { BlockDefinition, BlockEnv } from './types';
 
 beforeAll(() => registerBuiltinBlocks());
 
 const env = (): BlockEnv => {
-  const snapshot = fetchSnapshot(0, 0);
-  return { snapshot, index: buildTagIndex(snapshot) };
+  const systems = defaultSystems();
+  return makeEnv(systems, fetchLatest(collectTagKeys(systems, []), 0, 0));
 };
 
 describe('積木庫 registry', () => {

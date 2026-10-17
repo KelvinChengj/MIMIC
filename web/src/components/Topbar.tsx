@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFdm } from '../state/FdmContext';
-import { ChatIcon, HelpIcon } from './Icons';
+import { ChatIcon, HelpIcon, RefreshIcon } from './Icons';
+import { useSpin } from './PageParts';
 import { Legend } from './Lamp';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -10,7 +11,8 @@ export const formatClock = (ms: number) => {
 };
 
 export function Topbar() {
-  const { snapshot } = useFdm();
+  const { snapshot, refresh, stats } = useFdm();
+  const [spin, startSpin] = useSpin();
   const [help, setHelp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,9 +30,12 @@ export function Topbar() {
 
   return (
     <header className="topbar">
-      <span className="topbar__updated" title="最近一次向 FDM 取值的時間（每 30 秒自動更新）">
+      <span className="topbar__updated" title={`開啟網頁或按重新整理時才向 FDM 取值（不自動更新）\n最近一次：1 次批次請求、${stats.lastTags} 個 Tag`}>
         更新 <time>{formatClock(snapshot.updatedAt)}</time>
       </span>
+      <button className="icon-btn icon-btn--outline" aria-label="重新向 FDM 取值" title="重新向 FDM 取值" onClick={() => { startSpin(); refresh(); }}>
+        <RefreshIcon className={spin ? 'spin' : ''} />
+      </button>
       <button className="icon-btn icon-btn--outline" aria-label="AI 助理（尚未開放）" title="AI 助理（尚未開放）" disabled>
         <ChatIcon />
       </button>
@@ -42,7 +47,7 @@ export function Topbar() {
           <div className="popover" role="dialog" aria-label="燈號說明">
             <h2>燈號說明</h2>
             <Legend />
-            <p className="popover__note">資料來自 FDM；紅燈需連續多點超出紅色管制才成立，點數可在編輯模式調整。</p>
+            <p className="popover__note">燈號由 FDM 判定：isOOS 亮紅、isOOC 亮黃。開啟網頁或按重新整理時才向 FDM 取值。</p>
           </div>
         )}
       </div>

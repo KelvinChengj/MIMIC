@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { TagIndex } from '../lib/blocks';
+import type { Rollup } from '../lib/systems';
 import type { BlockSize, PageBlock, Snapshot, Status } from '../types';
 import type { Footprint } from './layout';
 
@@ -8,6 +9,8 @@ export interface BlockEnv {
   snapshot: Snapshot;
   /** FDM 最新回傳，依「廠區|Tag」查詢 */
   index: TagIndex;
+  /** 每次 FDM 回傳後集中算好的廠區 × 系統燈號 */
+  rollup: Rollup;
 }
 
 /** 積木所在的頁面環境 */

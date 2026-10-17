@@ -1,5 +1,5 @@
 import { SITES, SYSTEMS } from '../catalog/catalog';
-import type { MetricRule, Snapshot, TagReading } from '../types';
+import type { MetricRule, Snapshot } from '../types';
 
 /**
  * 模擬 FDM。真實環境中 isOOS / isOOC 由 FDM 判定後回傳，前端只負責顯示；
@@ -59,22 +59,74 @@ export function judge(limits: MetricRule, value: number | null): { isOOS: boolea
   return { isOOS, isOOC };
 }
 
-/** 以模擬資料取代真實 FDM；接真實 API 時只要換掉這個函式，回傳同樣的結構 */
-export function fetchSnapshot(seq: number, now = Date.now()): Snapshot {
-  const data: Snapshot['data'] = {};
-  for (const site of SITES) {
-    data[site.id] = {};
-    for (const sys of SYSTEMS) {
-      const pins = SCENARIOS[site.id]?.[sys.id] ?? {};
-      const tags = sys.tags.slice(0, sys.tags.length - site.dropTags);
-      data[site.id][sys.id] = tags.map((t): TagReading => {
-        const metric = t.name.slice(t.name.lastIndexOf('.') + 1);
-        const pin: Pin | undefined = t.name in pins ? pins[t.name] : '*' in pins ? pins['*'] : undefined;
-        const value = pin === undefined ? jitter(t.nominal, `${site.id}|${t.name}|${seq}`) : pin;
-        const limits = sys.metrics.find((m) => m.code === metric)?.defaults ?? {};
-        return { name: t.name, desc: t.desc, metric, value, ...judge(limits, value) };
-      });
-    }
+export interface TagInfo {
+  key: string;
+  siteId: string;
+  siteName: string;
+  /** FDM 上的分類（Tag 主檔裡的系統別）；燈號的系統歸屬以「系統管理」的定義為準 */
+  systemId: string;
+  systemName: string;
+  name: string;
+  desc: string;
+  metric: string;
+  unit: string;
+  decimals: number;
+}
+
+export const tagKey = (siteId: string, tag: string) => `${siteId}|${tag}`;
+
+interface MockTag {
+  info: TagInfo;
+  nominal: number;
+  limits: MetricRule;
+}
+
+/** 模擬 FDM 內部的 Tag 主檔（含預設沒放進任何系統的 spare Tag） */
+const MOCK: MockTag[] = SITES.flatMap((site) =>
+  SYSTEMS.flatMap((sys) =>
+    [...sys.tags.slice(0, sys.tags.length - site.dropTags), ...(sys.spare ?? [])].map((t): MockTag => {
+      const metric = t.name.slice(t.name.lastIndexOf('.') + 1);
+      const m = sys.metrics.find((x) => x.code === metric);
+      return {
+        info: {
+          key: tagKey(site.id, t.name),
+          siteId: site.id,
+          siteName: site.name,
+          systemId: sys.id,
+          systemName: sys.name,
+          name: t.name,
+          desc: t.desc,
+          metric,
+          unit: m?.unit ?? '',
+          decimals: m?.decimals ?? 1,
+        },
+        nominal: t.nominal,
+        limits: m?.defaults ?? {},
+      };
+    }),
+  ),
+);
+const MOCK_BY_KEY = new Map(MOCK.map((t) => [t.info.key, t]));
+
+/** FDM 的 Tag 主檔：選取 Tag、檢查 Tag 是否有效都以這份為準 */
+export const FDM_TAGS: TagInfo[] = MOCK.map((t) => t.info);
+export const FDM_TAG_BY_KEY = new Map(FDM_TAGS.map((t) => [t.key, t]));
+
+/**
+ * 向 FDM 發「一次」批次請求，取回指定 Tag 的最新值與 isOOS / isOOC。
+ * keys 為「廠區|Tag」；FDM 沒有的 Tag 不會回傳。
+ * 以模擬資料取代真實 FDM；接真實 API 時只要換掉這個函式，回傳同樣的結構。
+ */
+export function fetchLatest(keys: Iterable<string>, seq: number, now = Date.now()): Snapshot {
+  const readings: Snapshot['readings'] = {};
+  for (const key of keys) {
+    const t = MOCK_BY_KEY.get(key);
+    if (!t) continue;
+    const { siteId, systemId, name, desc, metric } = t.info;
+    const pins = SCENARIOS[siteId]?.[systemId] ?? {};
+    const pin: Pin | undefined = name in pins ? pins[name] : '*' in pins ? pins['*'] : undefined;
+    const value = pin === undefined ? jitter(t.nominal, `${siteId}|${name}|${seq}`) : pin;
+    readings[key] = { name, desc, metric, value, ...judge(t.limits, value) };
   }
-  return { updatedAt: now, data };
+  return { updatedAt: now, readings };
 }

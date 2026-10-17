@@ -1,4 +1,4 @@
-import { SITES, SYSTEMS } from '../../catalog/catalog';
+import { SITES } from '../../catalog/catalog';
 import { Dot } from '../../components/Lamp';
 import { formatValue, ruleLines } from '../../lib/status';
 import { useCell } from '../../state/derived';
@@ -26,7 +26,7 @@ function SystemExplain({ block }: { block: PageBlock<LampProps> }) {
   const { site: siteId, system: systemId } = block.props.source!;
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId);
-  const sys = SYSTEMS.find((s) => s.id === systemId);
+  const sys = cell?.system;
   if (!cell || !sys) return <p className="pv__none">找不到這個廠區或系統。</p>;
   const bad = cell.tags.filter((t) => t.status === 'red' || t.status === 'yellow');
   return (
@@ -38,7 +38,7 @@ function SystemExplain({ block }: { block: PageBlock<LampProps> }) {
           {bad.map((t) => (
             <tr key={t.name}>
               <td><code>{t.name}</code><small>{t.desc}</small></td>
-              <td className="num">{formatValue(t.value, t.metricDef?.decimals ?? 1)}</td>
+              <td className="num">{formatValue(t.value, t.decimals)}</td>
               <td><FdmChip valid status={t.status} /></td>
             </tr>
           ))}

@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useResolvePage } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
-import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
+import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LayersIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
 
 type Drag = { kind: 'page'; slug: string } | { kind: 'group'; id: string };
 type Drop =
@@ -67,6 +67,7 @@ export function Sidebar() {
         <button className="icon-btn" onClick={toggleSidebar} aria-label="展開側邊欄" title="展開側邊欄"><MenuIcon /></button>
         <Link to="/explore" className={`icon-btn ${pathname === '/explore' ? 'is-active' : ''}`} aria-label="Explore MIMIC" title="Explore MIMIC"><SearchIcon /></Link>
         <button className="icon-btn" onClick={() => openNewPage()} aria-label="新增頁面" title="新增頁面"><PlusIcon /></button>
+        <Link to="/systems" className={`icon-btn ${pathname.startsWith('/systems') ? 'is-active' : ''}`} aria-label="系統管理" title="系統管理"><LayersIcon /></Link>
         <nav className="rail-list" aria-label="Favorites">
           {groups.map((g) => (
             <div className="rail-group" key={g.id}>
@@ -136,6 +137,7 @@ export function Sidebar() {
         <SearchIcon size={16} /><span>Explore MIMIC</span><Chev />
       </Link>
       <button className="newpage-btn" onClick={() => openNewPage()}><PlusIcon size={15} /> 新增頁面</button>
+      <Link to="/systems" className={`side-link ${pathname.startsWith('/systems') ? 'is-active' : ''}`}><LayersIcon size={16} /> 系統管理</Link>
 
       <div className="fav-head">
         <button className="fav-head__title" onClick={() => setFavOpen((o) => !o)} aria-expanded={favOpen}>

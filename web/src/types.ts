@@ -38,6 +38,8 @@ export interface SystemDef {
   defaultStaleMinutes: number;
   metrics: MetricDef[];
   tags: TagTemplate[];
+  /** FDM 有、但預設沒有放進這個系統的 Tag（示範「系統管理」加入 Tag 用） */
+  spare?: TagTemplate[];
 }
 
 export interface SiteDef {
@@ -60,10 +62,38 @@ export interface TagReading {
   /** Out of Control：超出管制界限（未超規格）→ 黃燈 */
   isOOC: boolean;
 }
+/** 一次向 FDM 批次取值的結果 */
 export type Snapshot = {
   updatedAt: number;
-  data: Record<string, Record<string, TagReading[]>>;
+  /** 依「廠區|Tag」存放；FDM 沒有的 Tag 不會出現 */
+  readings: Record<string, TagReading>;
 };
+
+/**
+ * 系統定義（由系統負責人在「系統管理」維護）：各廠區包含哪些 Tag。
+ * 燈號積木只記住「廠區 + 系統代號」，修改這裡後所有引用的積木一起更新。
+ */
+export interface SystemConfig {
+  id: string;
+  name: string;
+  short: string;
+  owner: string;
+  /** 超過幾分鐘沒有 FDM 資料就判定為灰燈 */
+  staleMinutes: number;
+  /** 廠區代號 → Tag 名稱 */
+  tags: Record<string, string[]>;
+  /** 在系統管理新增的系統（內建系統不能刪除） */
+  custom?: boolean;
+  updatedAt?: number;
+}
+
+/** 系統定義的變更紀錄 */
+export interface SystemLogEntry {
+  at: number;
+  systemId: string;
+  who: string;
+  text: string;
+}
 
 export interface Scope {
   sites: string[];

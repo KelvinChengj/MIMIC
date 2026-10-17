@@ -30,6 +30,10 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'UPW-EDI-02.TMP', desc: 'EDI 混床 02 出水溫度', nominal: 23.8 },
       { name: 'UPW-PRE-04.TOC', desc: '前處理 04 TOC', nominal: 0.6 },
     ],
+    spare: [
+      { name: 'UPW-POL-04.RES', desc: '拋光 04 出水電阻率', nominal: 18.2 },
+      { name: 'UPW-POL-04.TOC', desc: '拋光 04 出水 TOC', nominal: 0.4 },
+    ],
   },
   {
     id: 'bulk',
@@ -53,6 +57,9 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'GAS-ARG-01.PRS', desc: '氬氣 01 壓力', nominal: 7.6 },
       { name: 'GAS-HE-01.PRS', desc: '氦氣 01 壓力', nominal: 7.5 },
       { name: 'GAS-GN2-03.FLW', desc: '一般氮氣 03 流量', nominal: 610 },
+    ],
+    spare: [
+      { name: 'GAS-PN2-02.PRS', desc: '純化氮氣 02 壓力', nominal: 7.9 },
     ],
   },
   {
@@ -100,6 +107,9 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'PWR-UPS-B.LOAD', desc: 'UPS B 負載率', nominal: 52 },
       { name: 'PWR-BUS-A.PF', desc: '匯流排 A 功率因數', nominal: 0.98 },
       { name: 'PWR-BUS-B.PF', desc: '匯流排 B 功率因數', nominal: 0.98 },
+    ],
+    spare: [
+      { name: 'PWR-UPS-C.LOAD', desc: 'UPS C 負載率', nominal: 50 },
     ],
   },
   {

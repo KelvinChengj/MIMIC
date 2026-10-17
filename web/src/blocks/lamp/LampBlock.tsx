@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SITES, SYSTEMS } from '../../catalog/catalog';
+import { SITES } from '../../catalog/catalog';
 import { StatusTile } from '../../components/StatusTile';
 import { evaluateLamp, lampTags, type LampResult } from '../../lib/blocks';
 import { STATUS_META, tileText } from '../../lib/status';
@@ -20,10 +20,10 @@ function SystemLampRender({ block, host }: RenderProps<LampProps>) {
   const cell = useCell(siteId, systemId);
   const scale = SCALE[block.size];
   const site = SITES.find((s) => s.id === siteId);
-  const sys = SYSTEMS.find((s) => s.id === systemId);
+  const sys = cell?.system;
   const name = block.title || `${site?.label ?? siteId} ${sys?.name ?? systemId}`;
   if (!cell) return <StatusTile fill scale={scale} status="gray" label={`${name}：找不到資料來源`} title={scale === 1 ? undefined : name} text="無資料來源" />;
-  const text = tileText(cell.summary, cell.sys.defaultStaleMinutes);
+  const text = cell.tags.length === 0 ? '尚未設定 Tag' : tileText(cell.summary, cell.system.staleMinutes);
   const status = cell.summary.status;
   return (
     <StatusTile

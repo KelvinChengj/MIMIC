@@ -24,12 +24,13 @@ function TagsRender({ block, mode }: RenderProps<TagsProps>) {
   const rows: TagRow[] = cell.tags.map((t) => ({
     key: t.name,
     name: t.name,
-    desc: `${t.desc}${t.metricDef?.unit ? ` · ${t.metricDef.unit}` : ''}`,
+    desc: `${t.desc}${t.unit ? ` · ${t.unit}` : ''}`,
     value: t.value,
-    decimals: t.metricDef?.decimals ?? 1,
+    decimals: t.decimals,
     status: t.status,
     isOOC: t.isOOC,
     isOOS: t.isOOS,
+    invalid: !t.valid,
   }));
   return (
     <TagTable

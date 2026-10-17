@@ -1,53 +1,18 @@
-import { SITES, SYSTEMS } from '../catalog/catalog';
 import type { LampProps, Snapshot, Status, TagReading, TagRef } from '../types';
+import { FDM_TAGS, FDM_TAG_BY_KEY, tagKey, type TagInfo } from './fdm';
 import { STATUS_META, summarize, tagStatus, type Summary } from './status';
 
-export interface TagInfo {
-  key: string;
-  siteId: string;
-  siteName: string;
-  systemId: string;
-  systemName: string;
-  name: string;
-  desc: string;
-  metric: string;
-  unit: string;
-  decimals: number;
-}
+export { tagKey, type TagInfo };
 
-export const tagKey = (siteId: string, tag: string) => `${siteId}|${tag}`;
-
-/** FDM 的 Tag 主檔：所有廠區 × 系統可選的 Tag（選取、檢查是否有效都以這份為準） */
-export const ALL_TAGS: TagInfo[] = SITES.flatMap((site) =>
-  SYSTEMS.flatMap((sys) =>
-    sys.tags.slice(0, sys.tags.length - site.dropTags).map((t): TagInfo => {
-      const metric = t.name.slice(t.name.lastIndexOf('.') + 1);
-      const m = sys.metrics.find((x) => x.code === metric);
-      return {
-        key: tagKey(site.id, t.name),
-        siteId: site.id,
-        siteName: site.name,
-        systemId: sys.id,
-        systemName: sys.name,
-        name: t.name,
-        desc: t.desc,
-        metric,
-        unit: m?.unit ?? '',
-        decimals: m?.decimals ?? 1,
-      };
-    }),
-  ),
-);
-export const TAG_BY_KEY = new Map(ALL_TAGS.map((t) => [t.key, t]));
+/** FDM 的 Tag 主檔：所有廠區可選的 Tag（選取、檢查是否有效都以這份為準） */
+export const ALL_TAGS: TagInfo[] = FDM_TAGS;
+export const TAG_BY_KEY = FDM_TAG_BY_KEY;
 
 /** FDM 最新一次回傳，依「廠區|Tag」查詢 */
 export type TagIndex = Map<string, TagReading>;
 
 export function buildTagIndex(snapshot: Snapshot): TagIndex {
-  const m: TagIndex = new Map();
-  for (const [siteId, systems] of Object.entries(snapshot.data))
-    for (const readings of Object.values(systems)) for (const r of readings) m.set(tagKey(siteId, r.name), r);
-  return m;
+  return new Map(Object.entries(snapshot.readings));
 }
 
 /** 燈號積木選取的 Tag；舊資料（自訂算式時期）的資料點自動轉成 Tag，重複的只算一次 */

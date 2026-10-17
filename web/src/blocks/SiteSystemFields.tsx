@@ -1,4 +1,5 @@
-import { SITES, SYSTEMS } from '../catalog/catalog';
+import { SITES } from '../catalog/catalog';
+import { useSystems } from '../state/SystemsContext';
 
 /** 單選廠區與系統（摘要、Tag 清單積木用） */
 export function SiteSystemSelect({ site, system, onChange }: {
@@ -6,6 +7,7 @@ export function SiteSystemSelect({ site, system, onChange }: {
   system: string;
   onChange: (patch: { site?: string; system?: string }) => void;
 }) {
+  const { systems } = useSystems();
   return (
     <section className="be__sec">
       <h3>資料來源 <small>這個積木顯示哪個廠區的哪個系統</small></h3>
@@ -19,7 +21,7 @@ export function SiteSystemSelect({ site, system, onChange }: {
         <div className="ef">
           <label htmlFor="sel-system">系統</label>
           <select id="sel-system" className="ef__input ef__input--plain" value={system} onChange={(e) => onChange({ system: e.target.value })}>
-            {SYSTEMS.map((s) => <option key={s.id} value={s.id}>{s.name} {s.short}</option>)}
+            {systems.map((s) => <option key={s.id} value={s.id}>{s.name}{s.short ? ` ${s.short}` : ''}</option>)}
           </select>
         </div>
       </div>
@@ -33,6 +35,7 @@ export function SiteSystemChecks({ sites, systems, onChange }: {
   systems: string[];
   onChange: (patch: { sites?: string[]; systems?: string[] }) => void;
 }) {
+  const all = useSystems().systems;
   const toggle = (list: string[], id: string) =>
     list.includes(id) ? (list.length > 1 ? list.filter((x) => x !== id) : list) : [...list, id];
   return (
@@ -46,7 +49,7 @@ export function SiteSystemChecks({ sites, systems, onChange }: {
       </fieldset>
       <fieldset className="checks">
         <legend>系統（欄）</legend>
-        {SYSTEMS.map((s) => (
+        {all.map((s) => (
           <label key={s.id}><input type="checkbox" checked={systems.includes(s.id)} onChange={() => onChange({ systems: toggle(systems, s.id) })} /> {s.name}</label>
         ))}
       </fieldset>
