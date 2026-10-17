@@ -28,6 +28,8 @@ function TagsRender({ block, mode }: RenderProps<TagsProps>) {
     value: t.value,
     decimals: t.metricDef?.decimals ?? 1,
     status: t.status,
+    isOOC: t.isOOC,
+    isOOS: t.isOOS,
   }));
   return (
     <TagTable

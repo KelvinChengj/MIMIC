@@ -18,6 +18,7 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 |---|---|
 | `/p/overview` | 首頁燈號牆：由「燈號」與「文字」積木組成的畫布（每個廠區 × 系統是一顆系統燈號積木），點燈號下鑽 |
 | `/p/:slug/b/:blockId` | 燈號積木的下鑽頁：摘要卡 + 這顆積木選取的 Tag 燈號清單（版面同系統下鑽頁） |
+|  | 兩種下鑽頁的 Tag 燈號清單都有 **OOC / OOS** 欄，顯示 FDM 回傳的旗標（TRUE / FALSE，無資料為「—」），讓使用者看到燈號為什麼亮 |
 | `/p/:slug/:site/:system` | 下鑽頁：規則說明、Tag name / Description / Value，可切「僅顯示異常 / 全部 Tag」，Refresh Values 重新取值 |
 | `/p/:slug/edit` | 編輯模式：積木畫布（左側積木庫）。自建頁面與內建燈號牆頁面共用；內建頁面可「還原預設版面」 |
 | `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |

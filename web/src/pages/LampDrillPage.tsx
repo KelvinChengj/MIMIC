@@ -39,6 +39,8 @@ function LampDrillView({ pageSlug, pageTitle, block }: { pageSlug: string; pageT
     value: t.reading?.value ?? null,
     decimals: t.info?.decimals ?? 1,
     status: t.status,
+    isOOC: t.reading?.isOOC,
+    isOOS: t.reading?.isOOS,
     invalid: !t.valid,
   }));
   const title = block.title || '燈號';

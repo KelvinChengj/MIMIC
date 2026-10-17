@@ -59,6 +59,19 @@ export interface TagRow {
   status: Status;
   /** FDM 找不到這個 Tag */
   invalid?: boolean;
+  /** FDM 回傳的旗標（沒有資料或無效時不顯示） */
+  isOOC?: boolean;
+  isOOS?: boolean;
+}
+
+/** FDM 旗標欄：TRUE 依燈號上色，FALSE 淡色，沒有資料顯示「—」 */
+function FlagCell({ on, kind, na }: { on?: boolean; kind: 'ooc' | 'oos'; na: boolean }) {
+  if (na) return <td className="flag"><span className="flag__na" aria-label="無資料">—</span></td>;
+  return (
+    <td className="flag">
+      {on ? <span className={`flag__on flag__on--${kind}`}>TRUE</span> : <span className="flag__off">FALSE</span>}
+    </td>
+  );
 }
 
 /** 「Tag 燈號清單」：Tag name / Description / Value，依嚴重程度排序，可切換「僅顯示異常 / 全部 Tag」 */
@@ -94,7 +107,11 @@ export function TagTable({ title, rows, defaultFilter = 'abnormal', cap = Infini
       </div>
       <table className="tag-table">
         <thead>
-          <tr><th>Tag name</th><th>Description</th><th className="num">Value</th></tr>
+          <tr>
+            <th>Tag name</th><th>Description</th><th className="num">Value</th>
+            <th className="flag" title="Out of Control：超出管制界限 → 黃燈">OOC<small>超出管制 → 黃</small></th>
+            <th className="flag" title="Out of Spec：超出規格界限 → 紅燈">OOS<small>超出規格 → 紅</small></th>
+          </tr>
         </thead>
         <tbody>
           {shown.map((t) => (
@@ -107,11 +124,13 @@ export function TagTable({ title, rows, defaultFilter = 'abnormal', cap = Infini
                   <span className="val__num">{t.invalid ? '無效' : formatValue(t.value, t.decimals)}</span>
                 </span>
               </td>
+              <FlagCell kind="ooc" on={t.isOOC} na={!!t.invalid || t.value == null} />
+              <FlagCell kind="oos" on={t.isOOS} na={!!t.invalid || t.value == null} />
             </tr>
           ))}
           {list.length === 0 && (
             <tr>
-              <td colSpan={3} className="tag-table__empty">
+              <td colSpan={5} className="tag-table__empty">
                 {rows.length === 0 ? '還沒有選擇 Tag。' : <>目前沒有異常的 Tag。<button className="link-btn" onClick={() => setLocal('all')}>查看全部 Tag</button></>}
               </td>
             </tr>

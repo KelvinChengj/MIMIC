@@ -552,3 +552,15 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .tag-table tr.is-invalid td { color: var(--muted); }
 .tag-table tr.is-invalid code { text-decoration: line-through; }
+
+/* ═════ Tag 燈號清單：FDM 旗標欄 ═════ */
+.tag-table th.flag, .tag-table td.flag { text-align: center; width: 104px; }
+.tag-table th.flag { line-height: 1.2; }
+.tag-table th.flag small { display: block; font-family: var(--font); font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.flag__on { display: inline-block; min-width: 54px; padding: 2px 8px; border-radius: 999px; font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.flag__on--oos { background: var(--red); color: #fff; }
+.flag__on--ooc { background: var(--yellow); color: #3a2a00; }
+.flag__off { font-family: var(--mono); font-size: 12px; color: #a3a8af; }
+.flag__na { color: #a3a8af; }
+.tagsblk--S .tag-table th.flag small { display: none; }
+.tagsblk--S .tag-table th.flag, .tagsblk--S .tag-table td.flag { width: 60px; }
