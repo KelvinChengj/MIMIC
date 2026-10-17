@@ -1,10 +1,6 @@
 import { SITES, SYSTEMS } from '../../catalog/catalog';
-import { RefreshIcon } from '../../components/Icons';
-import { Dot, Lamp, StatusBadge } from '../../components/Lamp';
-import { PathChip, useSpin } from '../../components/PageParts';
-import { ruleLines } from '../../lib/status';
+import { SummaryCard } from '../../components/DrillParts';
 import { useCell } from '../../state/derived';
-import { useFdm } from '../../state/FdmContext';
 import { cellsStatus } from '../cells';
 import { SiteSystemSelect } from '../SiteSystemFields';
 import { SummaryIcon } from '../icons';
@@ -20,46 +16,24 @@ export interface SummaryProps {
 const FOOT = { S: { w: 300, h: 96 }, M: { w: 460, h: 176 }, L: { w: 620, h: 236 } };
 const LAMP = { S: 44, M: 60, L: 78 };
 const LINES = { S: 0, M: 2, L: 4 };
-const SIGN = { red: '紅', yellow: '黃', green: '綠', gray: '灰' } as const;
 
 function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
   const { site: siteId, system: systemId, showActions } = block.props;
   const cell = useCell(siteId, systemId);
-  const { refresh } = useFdm();
-  const [spin, startSpin] = useSpin();
   const site = SITES.find((s) => s.id === siteId);
   const sys = SYSTEMS.find((s) => s.id === systemId);
   if (!cell || !site || !sys) return <section className="card">找不到這個廠區或系統</section>;
-
-  const { summary } = cell;
-  const lines = ruleLines(sys.defaultStaleMinutes).slice(0, LINES[block.size]);
   return (
-    <section
-      className={`card summary summary--${summary.status} summary--${block.size}`}
+    <SummaryCard
+      status={cell.summary.status}
+      title={<>{site.label} · {sys.name} {sys.short}</>}
+      size={block.size}
+      lamp={LAMP[block.size]}
+      lines={LINES[block.size]}
+      staleMinutes={sys.defaultStaleMinutes}
+      showActions={showActions}
       style={mode === 'canvas' ? { width: FOOT[block.size].w } : undefined}
-    >
-      <Lamp status={summary.status} size={LAMP[block.size]} />
-      <div className="summary__body">
-        <h1>{site.label} · {sys.name} {sys.short} <StatusBadge status={summary.status} /></h1>
-        {lines.length > 0 && (
-          <ul className="rule-lines">
-            {lines.map((l) => (
-              <li key={l.status}>
-                <Dot status={l.status} /><b>{SIGN[l.status]}</b><span>{l.text}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        {showActions && <PathChip />}
-      </div>
-      {showActions && (
-        <div className="summary__actions">
-          <button className="btn btn--primary" onClick={() => { startSpin(); refresh(); }}>
-            <RefreshIcon size={16} className={spin ? 'spin' : ''} /> Refresh Values
-          </button>
-        </div>
-      )}
-    </section>
+    />
   );
 }
 

@@ -24,7 +24,10 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
-  const host = useMemo(() => (page.builtin ? pageHost(pageBySlug(page.slug)) : OVERVIEW_HOST), [page.builtin, page.slug]);
+  const host = useMemo(() => ({
+    ...(page.builtin ? pageHost(pageBySlug(page.slug)) : OVERVIEW_HOST),
+    blockTo: (blockId: string) => `/p/${page.slug}/b/${blockId}`,
+  }), [page.builtin, page.slug]);
 
   const open = page.blocks.find((b) => b.id === openId);
   const add = (type: string) => setOpenId(addBlock(page.slug, type));

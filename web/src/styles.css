@@ -550,3 +550,5 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .be__check.is-bad { color: var(--red); }
 .be__check span { color: var(--muted); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tag-table tr.is-invalid td { color: var(--muted); }
+.tag-table tr.is-invalid code { text-decoration: line-through; }

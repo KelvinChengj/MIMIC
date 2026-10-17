@@ -22,7 +22,7 @@ export function NewPageDialog() {
     const gid = groupId === NEW_GROUP || !groups.some((g) => g.id === groupId) ? addGroup(groupName || '我的頁面') : groupId;
     addSlug(gid, slug);
     closeNewPage();
-    showToast('已建立空白頁面，按「＋ 燈號積木」開始');
+    showToast('已建立空白頁面，從左側積木庫加入積木');
     navigate(`/p/${slug}/edit`);
   };
 

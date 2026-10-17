@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { NotFound } from './components/PageParts';
 import { DrillRoute } from './pages/DrillPage';
 import { EditRoute } from './pages/EditRoute';
+import { LampDrillRoute } from './pages/LampDrillPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PageRoute } from './pages/PageRoute';
 import { FavoritesProvider } from './state/FavoritesContext';
@@ -28,6 +29,7 @@ export default function App() {
                   <Route index element={<Navigate to="/p/overview" replace />} />
                   <Route path="/p/:slug" element={<PageRoute />} />
                   <Route path="/p/:slug/edit" element={<EditRoute />} />
+                  <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
                   <Route path="/p/:slug/:site/:system" element={<DrillRoute />} />
                   <Route path="/explore" element={<ExplorePage />} />
                   <Route path="*" element={<NotFound />} />

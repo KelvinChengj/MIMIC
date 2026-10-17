@@ -40,7 +40,7 @@ function SystemLampRender({ block, host }: RenderProps<LampProps>) {
 }
 
 /** 選取的 Tag：單一 Tag 顯示數值，多個 Tag 顯示統計；大尺寸數值放大、狀態文字在下方 */
-function TagLampRender({ block }: RenderProps<LampProps>) {
+function TagLampRender({ block, host }: RenderProps<LampProps>) {
   const r = useLampResult(block.props);
   const scale = SCALE[block.size];
   return (
@@ -48,6 +48,7 @@ function TagLampRender({ block }: RenderProps<LampProps>) {
       fill
       scale={scale}
       status={r.status}
+      to={host.blockTo?.(block.id)}
       label={`${block.title}：${r.label}${r.text !== r.label ? `，${r.text}` : ''}`}
       title={scale === 1 ? undefined : block.title}
       value={scale === 4 && r.reason === 'ok' ? r.text : undefined}

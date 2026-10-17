@@ -14,6 +14,8 @@ export interface BlockEnv {
 export interface BlockHost {
   /** 某廠區 × 某系統的下鑽網址 */
   drillTo: (siteId: string, systemId: string) => string;
+  /** 畫布頁上某顆積木的下鑽頁（選取 Tag 的燈號積木用）；預覽等沒有頁面的情境不提供 */
+  blockTo?: (blockId: string) => string;
 }
 
 export interface RenderProps<P> {
