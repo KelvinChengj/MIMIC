@@ -17,8 +17,8 @@ import { formatDate } from './SystemsPage';
 export function SystemEditRoute() {
   const { id = '' } = useParams();
   const sys = useSystems().getSystem(id);
-  if (!sys) return <NotFound what="系統" />;
-  // 換系統時重新建立草稿
+  if (!sys) return <NotFound what="情境" />;
+  // 換情境時重新建立草稿
   return <SystemEditor key={sys.id} system={sys} />;
 }
 
@@ -93,21 +93,21 @@ function SystemEditor({ system }: { system: SystemConfig }) {
     if (!draft.name.trim() || invalid.length) return;
     const next = { ...draft, name: draft.name.trim(), short: draft.short.trim().toUpperCase() };
     saveSystem(next, describeChanges(system, next));
-    showToast('已儲存，所有引用這個系統的積木已同步更新');
+    showToast('已儲存，所有引用這個情境的積木已同步更新');
   };
   const remove = () => {
     if (!window.confirm(`確定刪除「${system.name}」？`)) return;
     deleteSystem(system.id);
-    showToast('已刪除系統');
-    navigate('/systems');
+    showToast('已刪除情境');
+    navigate('/scenarios');
   };
   const history = useMemo(() => log.filter((l) => l.systemId === system.id), [log, system.id]);
-  const deleteBlock = !system.custom ? '內建系統不能刪除' : refs.length ? `還有 ${refs.length} 個頁面引用，無法刪除` : '';
+  const deleteBlock = !system.custom ? '內建情境不能刪除' : refs.length ? `還有 ${refs.length} 個頁面引用，無法刪除` : '';
 
   return (
     <>
       <nav className="crumbs" aria-label="路徑">
-        <Link to="/systems">系統管理</Link>
+        <Link to="/scenarios">情境管理</Link>
         <span aria-hidden="true">›</span>
         <strong>{system.name}{system.short ? ` ${system.short}` : ''}</strong>
         <span className="crumbs__spacer" />
@@ -122,7 +122,7 @@ function SystemEditor({ system }: { system: SystemConfig }) {
             <div className="card__head"><h2>基本資料</h2></div>
             <div className="sysedit__grid">
               <div className="ef">
-                <label htmlFor="se-name">系統名稱</label>
+                <label htmlFor="se-name">情境名稱</label>
                 <input id="se-name" className="ef__input ef__input--plain" value={draft.name} maxLength={20} aria-invalid={!draft.name.trim()} onChange={(e) => patch({ name: e.target.value })} />
               </div>
               <div className="ef">
@@ -203,7 +203,7 @@ function SystemEditor({ system }: { system: SystemConfig }) {
 
         <aside className="stack">
           <section className="card">
-            <div className="card__head"><h2>引用這個系統的頁面（{refs.length}）</h2></div>
+            <div className="card__head"><h2>引用這個情境的頁面（{refs.length}）</h2></div>
             {refs.length === 0 ? <p className="be__empty">目前沒有積木或頁面引用。</p> : (
               <ul className="sysrefs">
                 {refs.map((r) => (
@@ -228,8 +228,8 @@ function SystemEditor({ system }: { system: SystemConfig }) {
           </section>
 
           <section className="card">
-            <div className="card__head"><h2>刪除系統</h2></div>
-            <button className="btn btn--danger" disabled={!!deleteBlock} onClick={remove}><TrashIcon size={15} /> 刪除這個系統</button>
+            <div className="card__head"><h2>刪除情境</h2></div>
+            <button className="btn btn--danger" disabled={!!deleteBlock} onClick={remove}><TrashIcon size={15} /> 刪除這個情境</button>
             {deleteBlock && <p className="be__empty sysedit__why">{deleteBlock}</p>}
           </section>
         </aside>

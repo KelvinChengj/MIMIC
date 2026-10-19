@@ -22,7 +22,7 @@ export function PageRoute() {
           <Dot status={page.fixedStatus ?? 'gray'} />
           <div>
             <h2>目前燈號：{page.fixedStatus && <StatusBadge status={page.fixedStatus} />}</h2>
-            <p>這個頁面尚未連結 FDM 資料源，燈號為固定示意值。建立連結後即可顯示廠區 × 系統的燈號牆。</p>
+            <p>這個頁面尚未連結 FDM 資料源，燈號為固定示意值。建立連結後即可顯示廠區 × 情境的燈號牆。</p>
           </div>
         </section>
       </>

@@ -26,7 +26,7 @@ export default function App() {
       <UiProvider>
         <SystemsProvider>
           <UserPagesProvider>
-            {/* FDM 取值要知道「需要哪些 Tag」，所以放在系統定義與頁面之內 */}
+            {/* FDM 取值要知道「需要哪些 Tag」，所以放在情境定義與頁面之內 */}
             <FdmProvider>
               <FavoritesProvider>
                 <Routes>
@@ -37,8 +37,10 @@ export default function App() {
                     <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
                     <Route path="/p/:slug/:site/:system" element={<DrillRoute />} />
                     <Route path="/explore" element={<ExplorePage />} />
-                    <Route path="/systems" element={<SystemsPage />} />
-                    <Route path="/systems/:id" element={<SystemEditRoute />} />
+                    <Route path="/scenarios" element={<SystemsPage />} />
+                    <Route path="/scenarios/:id" element={<SystemEditRoute />} />
+                    {/* 舊網址（改名「情境」之前） */}
+                    <Route path="/systems/*" element={<Navigate to="/scenarios" replace />} />
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>

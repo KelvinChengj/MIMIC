@@ -116,7 +116,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
       ) : (
         <PageHeader
           title={page.title}
-          sub={page.builtin ? '廠區 → 系統' : `自訂頁面 · ${page.blocks.length} 個積木`}
+          sub={page.builtin ? '廠區 → 情境' : `自訂頁面 · ${page.blocks.length} 個積木`}
           actions={
             <>
               <BackButton />

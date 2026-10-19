@@ -14,7 +14,7 @@ export function useLampResult(props: LampProps): LampResult {
   return useMemo(() => evaluateLamp(lampTags(props), index), [props, index]);
 }
 
-/** 整個系統：顯示該廠區該系統的整體燈號與「3 台異常」，點了下鑽到 Tag 清單 */
+/** 整個情境：顯示該廠區該情境的整體燈號與「3 台異常」，點了下鑽到 Tag 清單 */
 function SystemLampRender({ block, host }: RenderProps<LampProps>) {
   const { site: siteId, system: systemId } = block.props.source!;
   const cell = useCell(siteId, systemId);

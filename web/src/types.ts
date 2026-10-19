@@ -38,7 +38,7 @@ export interface SystemDef {
   defaultStaleMinutes: number;
   metrics: MetricDef[];
   tags: TagTemplate[];
-  /** FDM 有、但預設沒有放進這個系統的 Tag（示範「系統管理」加入 Tag 用） */
+  /** FDM 有、但預設沒有放進這個系統的 Tag（示範「情境管理」加入 Tag 用） */
   spare?: TagTemplate[];
 }
 
@@ -70,8 +70,8 @@ export type Snapshot = {
 };
 
 /**
- * 系統定義（由系統負責人在「系統管理」維護）：各廠區包含哪些 Tag。
- * 燈號積木只記住「廠區 + 系統代號」，修改這裡後所有引用的積木一起更新。
+ * 情境定義（介面上稱「情境」，程式內部沿用 system 命名；由情境負責人在「情境管理」維護）：各廠區包含哪些 Tag。
+ * 燈號積木只記住「廠區 + 情境代號」，修改這裡後所有引用的積木一起更新。
  */
 export interface SystemConfig {
   id: string;
@@ -82,12 +82,12 @@ export interface SystemConfig {
   staleMinutes: number;
   /** 廠區代號 → Tag 名稱 */
   tags: Record<string, string[]>;
-  /** 在系統管理新增的系統（內建系統不能刪除） */
+  /** 在情境管理新增的情境（內建情境不能刪除） */
   custom?: boolean;
   updatedAt?: number;
 }
 
-/** 系統定義的變更紀錄 */
+/** 情境定義的變更紀錄 */
 export interface SystemLogEntry {
   at: number;
   systemId: string;
@@ -135,7 +135,7 @@ export interface TagRef {
 export interface LampProps {
   /** 選取的 Tag */
   tags?: TagRef[];
-  /** 整個系統：顯示某廠區某系統所有 Tag 的彙整燈號（文字如「3 台異常」，點了下鑽） */
+  /** 整個情境：顯示某廠區某情境所有 Tag 的彙整燈號（文字如「3 台異常」，點了下鑽） */
   source?: { site: string; system: string };
   /** 舊版（自訂算式時期）的資料點；讀取時轉成 tags，條件算式已不再使用 */
   vars?: { name: string; site?: string; tag?: string }[];

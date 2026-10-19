@@ -77,12 +77,12 @@ function WallRender({ block, mode, host }: RenderProps<WallProps>) {
 export const wallBlock: BlockDefinition<WallProps> = {
   type: 'wall',
   label: '燈號牆',
-  description: '廠區 × 系統的燈號矩陣，點燈號可下鑽到 Tag 清單。',
+  description: '廠區 × 情境的燈號矩陣，點燈號可下鑽到 Tag 清單。',
   inLibrary: false, // 目前只給內建頁面使用，先不開放使用者自己新增
   category: '燈號',
   icon: <WallIcon />,
   defaultProps: () => ({ sites: SITES.map((s) => s.id), systems: SYSTEMS.slice(0, 3).map((s) => s.id) }),
-  defaultTitle: () => '燈號牆 · 廠區 × 系統',
+  defaultTitle: () => '燈號牆 · 廠區 × 情境',
   defaultSize: 'S',
   footprint: (b) => footprint(b.props.sites.length, b.props.systems.length, b.size),
   Render: WallRender,

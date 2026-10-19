@@ -24,7 +24,7 @@ export const lampBlock: BlockDefinition<LampProps> = {
   Render: LampRender,
   Editor: LampEditor,
   Explain: LampExplain,
-  // 檢視頁點燈號一律下鑽（整個系統 → 系統的 Tag 清單；選取 Tag → 這顆積木的 Tag 清單），不開說明視窗
+  // 檢視頁點燈號一律下鑽（整個情境 → 情境的 Tag 清單；選取 Tag → 這顆積木的 Tag 清單），不開說明視窗
   explainable: () => false,
   status: (b, env) =>
     b.props.source ? cellsStatus(env, [b.props.source.site], [b.props.source.system]) : evaluateLamp(lampTags(b.props), env.index).status,

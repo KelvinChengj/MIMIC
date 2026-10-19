@@ -20,7 +20,7 @@ const WIDTH: Record<BlockSize, number> = { S: 380, M: 520, L: 720 };
 
 function TagsRender({ block, mode }: RenderProps<TagsProps>) {
   const cell = useCell(block.props.site, block.props.system);
-  if (!cell) return <section className="card">找不到這個廠區或系統</section>;
+  if (!cell) return <section className="card">找不到這個廠區或情境</section>;
   const rows: TagRow[] = cell.tags.map((t) => ({
     key: t.name,
     name: t.name,
@@ -47,7 +47,7 @@ function TagsRender({ block, mode }: RenderProps<TagsProps>) {
 export const tagsBlock: BlockDefinition<TagsProps> = {
   type: 'tags',
   label: 'Tag 清單',
-  description: '某系統所有 Tag 的名稱、說明與數值，依嚴重程度排序。',
+  description: '某情境所有 Tag 的名稱、說明與數值，依嚴重程度排序。',
   inLibrary: false, // 目前只給內建頁面使用，先不開放使用者自己新增
   category: '資料',
   icon: <TagsIcon />,

@@ -55,7 +55,7 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
       <h3 id="sec-source">資料來源</h3>
       <div className="seg seg--wrap" role="radiogroup" aria-label="資料來源">
         <button role="radio" aria-checked={!source} className={!source ? 'is-on' : ''} onClick={() => setMode('tags')}>選擇 Tag</button>
-        <button role="radio" aria-checked={!!source} className={source ? 'is-on' : ''} onClick={() => setMode('system')}>整個系統</button>
+        <button role="radio" aria-checked={!!source} className={source ? 'is-on' : ''} onClick={() => setMode('system')}>整個情境</button>
       </div>
     </section>
   );
@@ -65,7 +65,7 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
       <>
         {picker}
         <SiteSystemSelect site={source.site} system={source.system} onChange={(patch) => onProps({ source: { ...source, ...(patch.site ? { site: patch.site } : {}), ...(patch.system ? { system: patch.system } : {}) } })} />
-        <p className="be__note">這個系統的所有 Tag 一起判定：任一 Tag 為 OOS 亮紅、任一為 OOC 亮黃，下方文字顯示「3 台異常」這類統計，點燈號會下鑽到 Tag 清單。</p>
+        <p className="be__note">這個情境的所有 Tag 一起判定：任一 Tag 為 OOS 亮紅、任一為 OOC 亮黃，下方文字顯示「3 台異常」這類統計，點燈號會下鑽到 Tag 清單。</p>
       </>
     );
   }
@@ -76,7 +76,7 @@ export function LampEditor({ block, onProps }: EditorProps<LampProps>) {
       {picker}
 
       <section className="be__sec" aria-labelledby="sec-set">
-        <h3 id="sec-set">1. 設定 Tag <small>輸入 Tag 名稱，可一次貼上多個（用換行、空白或逗號分隔），系統會向 FDM 檢查是否存在</small></h3>
+        <h3 id="sec-set">1. 設定 Tag <small>輸入 Tag 名稱，可一次貼上多個（用換行、空白或逗號分隔），會向 FDM 檢查是否存在</small></h3>
         <form className="taginput" onSubmit={addTyped}>
           <select className="ef__input ef__input--plain" value={site} onChange={(e) => setSite(e.target.value)} aria-label="廠區">
             {SITES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}

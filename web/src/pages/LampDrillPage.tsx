@@ -18,7 +18,7 @@ export function LampDrillRoute() {
   const page = useUserPages().getPage(slug);
   const block = page?.blocks.find((b) => b.id === blockId && b.type === 'lamp') as PageBlock<LampProps> | undefined;
   if (!page || !block) return <NotFound what="燈號頁面" />;
-  // 「整個系統」的燈號已經有系統下鑽頁
+  // 「整個情境」的燈號已經有情境下鑽頁
   const src = block.props.source;
   if (src) {
     const host = page.builtin ? pageHost(pageBySlug(slug)) : OVERVIEW_HOST;

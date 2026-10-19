@@ -22,7 +22,7 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId);
   const sys = cell?.system;
-  if (!cell || !site || !sys) return <section className="card">找不到這個廠區或系統</section>;
+  if (!cell || !site || !sys) return <section className="card">找不到這個廠區或情境</section>;
   return (
     <SummaryCard
       status={cell.summary.status}
@@ -39,13 +39,13 @@ function SummaryRender({ block, mode }: RenderProps<SummaryProps>) {
 
 export const summaryBlock: BlockDefinition<SummaryProps> = {
   type: 'summary',
-  label: '系統摘要',
-  description: '某廠區某系統的整體燈號，附紅黃綠判定規則說明。',
+  label: '情境摘要',
+  description: '某廠區某情境的整體燈號，附紅黃綠判定規則說明。',
   inLibrary: false, // 目前只給內建頁面使用，先不開放使用者自己新增
   category: '燈號',
   icon: <SummaryIcon />,
   defaultProps: () => ({ site: SITES[0].id, system: SYSTEMS[0].id }),
-  defaultTitle: () => '系統摘要',
+  defaultTitle: () => '情境摘要',
   titleless: true,
   footprint: (b) => FOOT[b.size],
   Render: SummaryRender,

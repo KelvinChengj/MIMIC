@@ -4,13 +4,13 @@ import { defaultSystems } from '../lib/systems';
 import type { SystemConfig, SystemLogEntry } from '../types';
 import { usePersistentState } from './storage';
 
-/** 示範中的登入者；正式環境由登入資訊取得，且只有系統負責人能編輯 */
+/** 示範中的登入者；正式環境由登入資訊取得，且只有情境負責人能編輯 */
 export const CURRENT_USER = 'KC';
 
 interface SystemsValue {
   systems: SystemConfig[];
   getSystem: (id: string) => SystemConfig | undefined;
-  /** 儲存一個系統的定義，並寫一筆變更紀錄 */
+  /** 儲存一個情境的定義，並寫一筆變更紀錄 */
   saveSystem: (next: SystemConfig, note: string) => void;
   createSystem: (name: string, short: string) => string;
   deleteSystem: (id: string) => void;
@@ -19,7 +19,7 @@ interface SystemsValue {
 const Ctx = createContext<SystemsValue | null>(null);
 
 /**
- * 系統定義。正式環境存在 MIMIC 後端資料庫（所有人共用同一份）；
+ * 情境定義（程式內部沿用 system 命名）。正式環境存在 MIMIC 後端資料庫（所有人共用同一份）；
  * 示範版沒有後端，先存在瀏覽器裡。
  */
 export function SystemsProvider({ children }: { children: ReactNode }) {
@@ -41,16 +41,16 @@ export function SystemsProvider({ children }: { children: ReactNode }) {
       createSystem: (name, short) => {
         const id = newId('sys');
         const sys: SystemConfig = {
-          id, name: name.trim() || '未命名系統', short: short.trim().toUpperCase(), owner: CURRENT_USER,
+          id, name: name.trim() || '未命名情境', short: short.trim().toUpperCase(), owner: CURRENT_USER,
           staleMinutes: 15, tags: {}, custom: true, updatedAt: Date.now(),
         };
         write((prev) => [...prev, sys]);
-        note(id, '建立系統');
+        note(id, '建立情境');
         return id;
       },
       deleteSystem: (id) => {
         write((prev) => prev.filter((s) => s.id !== id || !s.custom));
-        note(id, '刪除系統');
+        note(id, '刪除情境');
       },
       log,
     };

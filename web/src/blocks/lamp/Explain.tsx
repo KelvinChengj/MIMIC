@@ -21,13 +21,13 @@ function Rules({ current }: { current: Status }) {
   );
 }
 
-/** 整個系統：列出有問題的 Tag */
+/** 整個情境：列出有問題的 Tag */
 function SystemExplain({ block }: { block: PageBlock<LampProps> }) {
   const { site: siteId, system: systemId } = block.props.source!;
   const cell = useCell(siteId, systemId);
   const site = SITES.find((s) => s.id === siteId);
   const sys = cell?.system;
-  if (!cell || !sys) return <p className="pv__none">找不到這個廠區或系統。</p>;
+  if (!cell || !sys) return <p className="pv__none">找不到這個廠區或情境。</p>;
   const bad = cell.tags.filter((t) => t.status === 'red' || t.status === 'yellow');
   return (
     <div className="pv">

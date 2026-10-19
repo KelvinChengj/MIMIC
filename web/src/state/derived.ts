@@ -83,7 +83,7 @@ export function useResolvePage() {
   );
 }
 
-/** 引用某個系統的地方：頁面上的積木，或範圍包含這個系統的內建頁面 */
+/** 引用某個情境的地方：頁面上的積木，或範圍包含這個情境的內建頁面 */
 export interface SystemRef {
   pageSlug: string;
   pageTitle: string;
@@ -105,7 +105,7 @@ export function groupRefs(refs: SystemRef[]) {
   return [...out.values()];
 }
 
-/** 每個系統被哪些積木 / 頁面引用（系統管理用：還有引用就不能刪除） */
+/** 每個情境被哪些積木 / 頁面引用（情境管理用：還有引用就不能刪除） */
 export function useSystemRefs() {
   const { pages } = useUserPages();
   return useMemo(() => {

@@ -12,7 +12,7 @@ export function DrillRoute() {
   const { slug = '', site = '', system = '' } = useParams();
   const page = pageBySlug(slug);
   const { getSystem } = useSystems();
-  // 全廠總覽底下也能下鑽到在「系統管理」新增的系統
+  // 全廠總覽底下也能下鑽到在「情境管理」新增的情境
   const ok = page?.scope?.sites.includes(site) && (page.scope.systems.includes(system) || (slug === 'overview' && !!getSystem(system)));
   if (!page || !ok) return <NotFound what="燈號頁面" />;
   return <DrillView page={page} siteId={site} systemId={system} />;

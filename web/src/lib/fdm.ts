@@ -5,8 +5,8 @@ import type { MetricRule, Snapshot } from '../types';
  * 模擬 FDM。真實環境中 isOOS / isOOC 由 FDM 判定後回傳，前端只負責顯示；
  * 這裡用 catalog 裡各量測類型的界限模擬那個判定。
  *
- * 情境表：指定某廠區 × 系統的 Tag 數值，讓示範畫面有紅黃灰燈。
- * - number：固定數值；null：無資料；'*' 代表整個系統無資料
+ * 示範數值表：指定某廠區 × FDM 分類的 Tag 數值，讓示範畫面有紅黃灰燈。
+ * - number：固定數值；null：無資料；'*' 代表整個分類無資料
  */
 type Pin = number | null;
 const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
@@ -63,7 +63,7 @@ export interface TagInfo {
   key: string;
   siteId: string;
   siteName: string;
-  /** FDM 上的分類（Tag 主檔裡的系統別）；燈號的系統歸屬以「系統管理」的定義為準 */
+  /** FDM 上的分類（Tag 主檔裡的系統別）；燈號的情境歸屬以「情境管理」的定義為準 */
   systemId: string;
   systemName: string;
   name: string;
@@ -81,7 +81,7 @@ interface MockTag {
   limits: MetricRule;
 }
 
-/** 模擬 FDM 內部的 Tag 主檔（含預設沒放進任何系統的 spare Tag） */
+/** 模擬 FDM 內部的 Tag 主檔（含預設沒放進任何情境的 spare Tag） */
 const MOCK: MockTag[] = SITES.flatMap((site) =>
   SYSTEMS.flatMap((sys) =>
     [...sys.tags.slice(0, sys.tags.length - site.dropTags), ...(sys.spare ?? [])].map((t): MockTag => {

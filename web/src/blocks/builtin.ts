@@ -15,7 +15,7 @@ const Y0 = 112;
 
 /**
  * 內建燈號牆頁面的預設版面：全部都是「燈號」與「文字」積木。
- * 每個廠區 × 系統是一顆「系統燈號」的小燈號積木，欄名、列名與標題是文字積木。
+ * 每個廠區 × 情境是一顆「整個情境」的小燈號積木，欄名、列名與標題是文字積木。
  * 使用者可以像自建頁面一樣在畫布上移動、縮放、增刪。
  */
 export function defaultWallLayout(page: PageDef): PageBlock[] {
@@ -30,7 +30,7 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
     out.push(mk(id, 'text', { text: content }, { size, x: Math.round(left), y: Math.round(cy - fp.h / 2) }));
   };
 
-  text('title', '燈號牆 · 廠區 × 系統', 'M', 24, 40);
+  text('title', '燈號牆 · 廠區 × 情境', 'M', 24, 40);
   systems.forEach((sys, c) => text(`col-${sys.id}`, sys.name, 'S', X0 + c * (TILE.w + GAP_X), Y0 - 24, TILE.w));
   sites.forEach((site, r) => {
     const y = Y0 + r * (TILE.h + GAP_Y);
