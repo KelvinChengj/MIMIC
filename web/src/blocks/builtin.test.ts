@@ -75,9 +75,9 @@ describe('戰情指揮官頁 = 值班情境燈號 + 文字積木', () => {
 });
 
 describe('哪些內建頁面是積木畫布', () => {
-  it('有資料範圍的頁面是（含單一格子）；示意頁不是', () => {
+  it('所有內建頁面都有資料範圍（沒有功能的示意頁已移除）', () => {
+    expect(PAGES.every(isWallPage)).toBe(true);
     expect(isWallPage(pageBySlug('f18p2-upw-duty')!)).toBe(true);
-    expect(isWallPage(pageBySlug('cda')!)).toBe(false);
     expect(builtinLayoutPage('cda')).toBeUndefined();
   });
   it('值班頁燈號數 = 廠區數 × 系統數', () => {

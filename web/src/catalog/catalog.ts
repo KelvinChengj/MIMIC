@@ -163,17 +163,11 @@ export const PAGES: PageDef[] = [
   // ── 側欄預設 Favorites ──
   { slug: 'overview', title: 'F18A 全廠總覽', scope: ALL, layer: 'command' },
   { slug: 'power', title: 'Power 電力系統', scope: { sites: allSites, systems: ['power'] } },
-  { slug: 'cda', title: 'CDA 乾燥空氣', fixedStatus: 'green' },
   { slug: 'upw', title: 'UPW 超純水', scope: { sites: allSites, systems: ['upw'] } },
-  { slug: 'pcw', title: 'PCW 冷卻水', fixedStatus: 'green' },
   { slug: 'hvac', title: 'HVAC 空調系統', scope: { sites: allSites, systems: ['mau'] } },
   { slug: 'exhaust', title: 'Exhaust 廢氣系統', scope: { sites: allSites, systems: ['exhaust'] } },
   { slug: 'gas', title: 'Gas 特殊氣體', scope: { sites: allSites, systems: ['bulk'] } },
   { slug: 'chemical', title: 'Chemical 化學品', scope: { sites: allSites, systems: ['chem'] } },
-  { slug: 'daily-open10', title: '我的MIMIC', fixedStatus: 'green' },
-  { slug: 'abnormal-track', title: '異常追蹤', fixedStatus: 'yellow' },
-  { slug: 'equipment-maint', title: '設備維護', fixedStatus: 'green' },
-  { slug: 'energy-saving', title: '節能專案', fixedStatus: 'green' },
 
   // ── Explore：他人建立的頁面 ──
   {

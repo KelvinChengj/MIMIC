@@ -35,7 +35,7 @@ export function usePageStatus() {
   const env = useBlockEnv();
   return useMemo(() => (page: PageDef): Status => {
     const layout = env.getPage(page.slug);
-    return layout ? pageStatusOf(layout, env) : (page.fixedStatus ?? 'gray');
+    return layout ? pageStatusOf(layout, env) : 'gray';
   }, [env]);
 }
 
@@ -44,7 +44,7 @@ export interface ResolvedPage {
   title: string;
   status: Status;
   user: boolean;
-  /** 積木畫布頁的層級；示意頁沒有 */
+  /** 積木畫布頁的層級 */
   layer?: Layer;
 }
 
@@ -57,7 +57,7 @@ export function useResolvePage() {
         const up = env.getPage(slug);
         if (up) return { slug, title: up.title, status: pageStatusOf(up, env), user: !up.builtin, layer: layerOf(up) };
         const page = pageBySlug(slug);
-        return page ? { slug, title: page.title, status: page.fixedStatus ?? 'gray', user: false } : null;
+        return page ? { slug, title: page.title, status: 'gray', user: false } : null;
       },
     [env],
   );

@@ -12,11 +12,23 @@ const DEFAULT_GROUPS: FavGroup[] = [
   {
     id: 'plant',
     name: '廠務監控',
-    slugs: ['overview', 'power', 'cda', 'upw', 'pcw', 'hvac', 'exhaust', 'gas', 'chemical'],
+    slugs: ['overview', 'power', 'upw', 'hvac', 'exhaust', 'gas', 'chemical'],
   },
-  { id: 'daily', name: '日常作業', slugs: ['daily-open10', 'abnormal-track', 'equipment-maint'] },
-  { id: 'project', name: '專案專區', slugs: ['energy-saving'] },
 ];
+
+/** 已移除的示意頁（沒有任何功能）與只放這些頁面的預設分類；讀取舊的側欄設定時一併清掉 */
+const REMOVED_SLUGS = new Set(['cda', 'pcw', 'daily-open10', 'abnormal-track', 'equipment-maint', 'energy-saving']);
+const REMOVED_GROUPS = new Set(['daily', 'project']);
+function cleanup(groups: FavGroup[]): FavGroup[] {
+  if (!groups.some((g) => g.slugs.some((s) => REMOVED_SLUGS.has(s)))) return groups;
+  const out = groups.flatMap((g) => {
+    if (!g.slugs.some((s) => REMOVED_SLUGS.has(s))) return [g];
+    const slugs = g.slugs.filter((s) => !REMOVED_SLUGS.has(s));
+    // 只有「清掉示意頁後才變空」的預設分類才移除；使用者自己清空的分類保留
+    return REMOVED_GROUPS.has(g.id) && slugs.length === 0 ? [] : [{ ...g, slugs }];
+  });
+  return out.length ? out : DEFAULT_GROUPS;
+}
 
 interface FavValue {
   groups: FavGroup[];
@@ -36,10 +48,11 @@ interface FavValue {
 const Ctx = createContext<FavValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
-  const [groups, setGroups] = usePersistentState<FavGroup[]>('mimic.favorites.v1', DEFAULT_GROUPS);
+  const [stored, setGroups] = usePersistentState<FavGroup[]>('mimic.favorites.v1', DEFAULT_GROUPS);
+  const groups = useMemo(() => cleanup(stored), [stored]);
 
   const value = useMemo<FavValue>(() => {
-    const apply = (fn: (g: FavGroup[]) => FavGroup[]) => setGroups((prev) => fn(prev));
+    const apply = (fn: (g: FavGroup[]) => FavGroup[]) => setGroups((prev) => fn(cleanup(prev)));
     return {
       groups,
       isFavorite: (slug) => groups.some((g) => g.slugs.includes(slug)),

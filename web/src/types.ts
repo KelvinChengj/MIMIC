@@ -91,9 +91,8 @@ export interface PageDef {
   title: string;
   /** 內建頁面的層級（預設值班情境） */
   layer?: Layer;
-  /** 有 scope → 燈號由 FDM 即時計算；沒有 → 示意頁，使用固定狀態 */
+  /** 資料範圍：哪些廠區 × 系統 */
   scope?: Scope;
-  fixedStatus?: Status;
   author?: { name: string; initials: string; dept: string };
   systemTags?: string[];
   siteLabel?: string;
