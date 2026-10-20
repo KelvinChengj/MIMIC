@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fetchLatest, judge } from './fdm';
-import { ruleLines, summarize, tagStatus, tileText, worstOf } from './status';
-import { cellKey, collectTagKeys, defaultSystems, makeEnv } from './systems';
+import { fetchLamps, fetchVTagDetail, judge, VTAGS } from './fdm';
+import { LAMP_CODE, ruleLines, summarize, tagStatus, vtagStatus, worstOf } from './status';
 
 describe('tagStatus：只看 FDM 旗標', () => {
   it('無資料為灰（即使旗標有值也一樣）', () => expect(tagStatus({ value: null, isOOS: true, isOOC: false })).toBe('gray'));
@@ -35,42 +34,43 @@ describe('summarize / worstOf', () => {
   it('頁面彙整時灰優先於綠', () => expect(worstOf(['green', 'gray'])).toBe('gray'));
 });
 
-describe('示範資料（FDM 模擬）', () => {
-  const systems = defaultSystems();
-  const keys = collectTagKeys(systems, []);
-  const at = (seq: number) => makeEnv(systems, fetchLatest(keys, seq, 0));
-  const env = at(0);
-  const run = (site: string, sys: string) => env.rollup.get(cellKey(site, sys))!.summary;
-  it('每個 Tag 都帶有 value / isOOS / isOOC', () => {
-    const r = env.snapshot.readings['f18p2|UPW-POL-02.TOC'];
-    expect(Object.keys(r)).toEqual(expect.arrayContaining(['value', 'isOOS', 'isOOC']));
-  });
-  it('F18P2 超純水：3 OOS、2 OOC、1 無資料，共 8 點', () => {
-    const s = run('f18p2', 'upw');
-    expect([s.status, s.red, s.yellow, s.gray, s.total]).toEqual(['red', 3, 2, 1, 8]);
-    expect(tileText(s, 15)).toBe('3 台異常');
-  });
-  it('F18P7 排氣整個無資料為灰', () => {
-    const s = run('f18p7', 'exhaust');
-    expect(s.status).toBe('gray');
-    expect(tileText(s, 15)).toBe('15 分無資料');
-  });
-  it('F18P1 電力：TR1 溫度 97 超出規格 → OOS 紅燈', () => expect(run('f18p1', 'power').status).toBe('red'));
-  it('正常的廠區 × 系統是綠燈', () => {
-    expect(run('f18p1', 'upw').status).toBe('green');
-    expect(run('f18p2', 'mau').status).toBe('green');
-  });
-  it('重新整理後正常 Tag 仍是正常', () => {
-    expect(at(7).rollup.get(cellKey('f18p1', 'upw'))!.summary.status).toBe('green');
+describe('virtual tag 燈號代碼', () => {
+  it('對照表：0 綠、1 黃、2 紅', () => expect(LAMP_CODE).toEqual({ 0: 'green', 1: 'yellow', 2: 'red' }));
+  it('沒有值或不在表上 → 灰', () => {
+    expect(vtagStatus(null)).toBe('gray');
+    expect(vtagStatus(undefined)).toBe('gray');
+    expect(vtagStatus(9)).toBe('gray');
   });
 });
 
+describe('示範資料（FDM 模擬）', () => {
+  const snap = fetchLamps(VTAGS.map((v) => v.key), 0, 0);
+  const code = (k: string) => snap.readings[k]?.value;
+  it('virtual tag 的值是燈號代碼：F18P2 超純水 2、F18P1 電力 2、正常 0、F18P7 排氣沒資料', () => {
+    expect(code('f18p2|F18P2.UPW.LAMP')).toBe(2);
+    expect(code('f18p1|F18P1.PWR.LAMP')).toBe(2);
+    expect(code('f18p1|F18P1.UPW.LAMP')).toBe(0);
+    expect(code('f18p7|F18P7.EXH.LAMP')).toBeNull();
+  });
+  it('只回傳要求的 virtual tag；沒有的不回傳', () => {
+    expect(Object.keys(fetchLamps(['f18p2|F18P2.UPW.LAMP', 'f18p2|NOPE'], 0, 0).readings)).toEqual(['f18p2|F18P2.UPW.LAMP']);
+  });
+  it('下鑽讀回 InSQL tag：F18P2 超純水 3 OOS、2 OOC、1 無資料，共 8 點', () => {
+    const d = fetchVTagDetail('f18p2|F18P2.UPW.LAMP', 0, 0)!;
+    const st = d.tags.map(tagStatus);
+    expect([d.tags.length, st.filter((x) => x === 'red').length, st.filter((x) => x === 'yellow').length, st.filter((x) => x === 'gray').length]).toEqual([8, 3, 2, 1]);
+    expect(d.tags[0]).toMatchObject({ key: 'f18p2|UPW-POL-01.RES', unit: 'MΩ·cm' });
+    expect(fetchVTagDetail('f18p2|NOPE', 0, 0)).toBeNull();
+  });
+  it('重新整理後正常的仍是正常', () => expect(fetchLamps(['f18p1|F18P1.UPW.LAMP'], 7, 0).readings['f18p1|F18P1.UPW.LAMP'].value).toBe(0));
+});
+
 describe('ruleLines', () => {
-  it('四條固定規則，以 OOS / OOC 說明', () => {
-    const lines = ruleLines(15);
+  it('四條固定規則，以 virtual tag 的值說明', () => {
+    const lines = ruleLines();
     expect(lines.map((l) => l.status)).toEqual(['red', 'yellow', 'green', 'gray']);
-    expect(lines[0].text).toContain('OOS');
-    expect(lines[1].text).toContain('OOC');
-    expect(lines[3].text).toContain('15 分鐘');
+    expect(lines[0].text).toContain('值為 2');
+    expect(lines[1].text).toContain('值為 1');
+    expect(lines[2].text).toContain('值為 0');
   });
 });

@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { OVERVIEW_HOST, pageHost } from '../blocks/host';
+import { pageHost } from '../blocks/host';
 import { BlockDetail, BlockDialog } from '../components/BlockDialog';
 import { BlockLibrary } from '../components/BlockLibrary';
 import { Canvas } from '../components/Canvas';
 import { PlusIcon } from '../components/Icons';
 import { Legend } from '../components/Lamp';
 import { BackButton, FullscreenButton, PageHeader } from '../components/PageParts';
-import { pageBySlug } from '../catalog/catalog';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
 import { useUserPages } from '../state/UserPagesContext';
+import { layerOf } from '../lib/pages';
 import type { UserPage } from '../types';
+import { LAYER_META, LayerChip } from '../components/LayerChip';
 
 /**
  * 積木畫布頁面：檢視 /p/:slug；編輯 /p/:slug/edit（左側積木庫 + 畫布）。
@@ -24,10 +25,9 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
-  const host = useMemo(() => ({
-    ...(page.builtin ? pageHost(pageBySlug(page.slug)) : OVERVIEW_HOST),
-    blockTo: (blockId: string) => `/p/${page.slug}/b/${blockId}`,
-  }), [page.builtin, page.slug]);
+  const host = useMemo(() => pageHost(page.slug), [page.slug]);
+  const layer = layerOf(page);
+  const meta = LAYER_META[layer];
 
   const open = page.blocks.find((b) => b.id === openId);
   const add = (type: string) => setOpenId(addBlock(page.slug, type));
@@ -59,9 +59,9 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
       empty={
         edit ? (
           <>
-            <h2>這是一張空白畫布</h2>
-            <p>從左邊的積木庫挑積木。燈號積木可以選 Tag，用加減乘除和 and / or 寫出紅、黃燈條件，再依 FDM 數值亮燈。</p>
-            <button className="btn btn--primary btn--lg" onClick={() => add('lamp')}><PlusIcon size={18} /> 新增第一個燈號積木</button>
+            <h2>這是一張空白的{meta.label}畫布</h2>
+            <p>從左邊的積木庫挑積木。{meta.hint}。</p>
+            <button className="btn btn--primary btn--lg" onClick={() => add(meta.first)}><PlusIcon size={18} /> {meta.firstLabel}</button>
           </>
         ) : (
           <>
@@ -100,12 +100,11 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
                   onBlur={(e) => !e.target.value.trim() && renamePage(page.slug, '未命名頁面')}
                 />
               )}
+              <LayerChip layer={layer} />
               <span className="mode-pill">編輯模式</span>
             </>
           }
-          sub={page.builtin
-            ? '整張燈號牆都是燈號積木與文字積木：拖曳、縮放、增刪都可以。燈號積木點兩下編輯；變更自動儲存'
-            : '從積木庫加入積木，拖曳擺放；點一下積木選取後可切換小、中、大，點兩下編輯。變更自動儲存'}
+          sub={`${meta.label}：${meta.hint}。從積木庫加入積木，拖曳擺放；點一下選取後可切換小、中、大，點兩下編輯。變更自動儲存`}
           actions={
             <>
               {dangerBtn}
@@ -115,8 +114,8 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
         />
       ) : (
         <PageHeader
-          title={page.title}
-          sub={page.builtin ? '廠區 → 情境' : `自訂頁面 · ${page.blocks.length} 個積木`}
+          title={<>{page.title} <LayerChip layer={layer} /></>}
+          sub={meta.hint}
           actions={
             <>
               <BackButton />
@@ -129,7 +128,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
 
       {edit ? (
         <div className="editor-layout">
-          <BlockLibrary onAdd={add} />
+          <BlockLibrary layer={layer} onAdd={add} />
           <div className="editor-layout__canvas">{canvas}</div>
         </div>
       ) : (

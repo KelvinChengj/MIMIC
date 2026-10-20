@@ -10,21 +10,20 @@ const SIGN = { red: '紅', yellow: '黃', green: '綠', gray: '灰' } as const;
 const SEVERITY: Record<Status, number> = { red: 0, yellow: 1, green: 2, gray: 3 };
 
 /** 下鑽頁上方的摘要卡：大燈號、標題、燈號規則、Refresh Values */
-export function SummaryCard({ status, title, lamp = 78, lines = 4, size = 'L', staleMinutes = 15, showActions, style }: {
+export function SummaryCard({ status, title, lamp = 78, lines = 4, size = 'L', showActions, style }: {
   status: Status;
   title: ReactNode;
   lamp?: number;
   /** 顯示幾行規則說明（0～4） */
   lines?: number;
   size?: 'S' | 'M' | 'L';
-  staleMinutes?: number;
   /** 顯示網址與 Refresh Values（獨立的下鑽頁用） */
   showActions?: boolean;
   style?: CSSProperties;
 }) {
   const { refresh } = useFdm();
   const [spin, startSpin] = useSpin();
-  const rules = ruleLines(staleMinutes).slice(0, lines);
+  const rules = ruleLines().slice(0, lines);
   return (
     <section className={`card summary summary--${status} summary--${size}`} style={style}>
       <Lamp status={status} size={lamp} />
@@ -131,7 +130,7 @@ export function TagTable({ title, rows, defaultFilter = 'abnormal', cap = Infini
           {list.length === 0 && (
             <tr>
               <td colSpan={5} className="tag-table__empty">
-                {rows.length === 0 ? '還沒有選擇 Tag。' : <>目前沒有異常的 Tag。<button className="link-btn" onClick={() => setLocal('all')}>查看全部 Tag</button></>}
+                {rows.length === 0 ? '沒有 Tag。' : <>目前沒有異常的 Tag。<button className="link-btn" onClick={() => setLocal('all')}>查看全部 Tag</button></>}
               </td>
             </tr>
           )}

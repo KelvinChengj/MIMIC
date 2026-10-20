@@ -67,7 +67,7 @@ export function Sidebar() {
         <button className="icon-btn" onClick={toggleSidebar} aria-label="展開側邊欄" title="展開側邊欄"><MenuIcon /></button>
         <Link to="/explore" className={`icon-btn ${pathname === '/explore' ? 'is-active' : ''}`} aria-label="Explore MIMIC" title="Explore MIMIC"><SearchIcon /></Link>
         <button className="icon-btn" onClick={() => openNewPage()} aria-label="新增頁面" title="新增頁面"><PlusIcon /></button>
-        <Link to="/scenarios" className={`icon-btn ${pathname.startsWith('/scenarios') ? 'is-active' : ''}`} aria-label="情境管理" title="情境管理"><LayersIcon /></Link>
+        <Link to="/vtags" className={`icon-btn ${pathname.startsWith('/vtags') ? 'is-active' : ''}`} aria-label="Virtual Tag 清單" title="Virtual Tag 清單"><LayersIcon /></Link>
         <nav className="rail-list" aria-label="Favorites">
           {groups.map((g) => (
             <div className="rail-group" key={g.id}>
@@ -137,7 +137,7 @@ export function Sidebar() {
         <SearchIcon size={16} /><span>Explore MIMIC</span><Chev />
       </Link>
       <button className="newpage-btn" onClick={() => openNewPage()}><PlusIcon size={15} /> 新增頁面</button>
-      <Link to="/scenarios" className={`side-link ${pathname.startsWith('/scenarios') ? 'is-active' : ''}`}><LayersIcon size={16} /> 情境管理</Link>
+      <Link to="/vtags" className={`side-link ${pathname.startsWith('/vtags') ? 'is-active' : ''}`}><LayersIcon size={16} /> Virtual Tag 清單</Link>
 
       <div className="fav-head">
         <button className="fav-head__title" onClick={() => setFavOpen((o) => !o)} aria-expanded={favOpen}>
@@ -241,6 +241,7 @@ export function Sidebar() {
                           <span className="grip" aria-hidden="true"><GripIcon /></span>
                           <Link to={`/p/${slug}`} className={`fav-item ${isActive(slug) ? 'is-active' : ''}`} aria-current={isActive(slug) ? 'page' : undefined} draggable={false}>
                             <span className="fav-item__title">{page.title}</span>
+                            {page.layer === 'command' && <span className="fav-item__layer" title="戰情指揮官">指揮</span>}
                             <span className="row-actions row-actions--item">
                               <button className="icon-btn icon-btn--xs" onClick={(e) => { e.preventDefault(); fav.nudgePage(slug, -1); }} aria-label={`上移「${page.title}」`} title="上移"><ChevronUp size={14} /></button>
                               <button className="icon-btn icon-btn--xs" onClick={(e) => { e.preventDefault(); fav.nudgePage(slug, 1); }} aria-label={`下移「${page.title}」`} title="下移"><ChevronDown size={14} /></button>

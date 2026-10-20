@@ -1,7 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { TagIndex } from '../lib/blocks';
-import type { Rollup } from '../lib/systems';
-import type { BlockSize, PageBlock, Snapshot, Status } from '../types';
+import type { BlockSize, Layer, PageBlock, Snapshot, Status, UserPage } from '../types';
 import type { Footprint } from './layout';
 
 /** 積木判定燈號時可取用的資料 */
@@ -9,16 +8,16 @@ export interface BlockEnv {
   snapshot: Snapshot;
   /** FDM 最新回傳，依「廠區|Tag」查詢 */
   index: TagIndex;
-  /** 每次 FDM 回傳後集中算好的廠區 × 系統燈號 */
-  rollup: Rollup;
+  /** 依 slug 取得頁面（指揮官層的燈號要看值班情境頁裡的燈號） */
+  getPage: (slug: string) => UserPage | undefined;
 }
 
 /** 積木所在的頁面環境 */
 export interface BlockHost {
-  /** 某廠區 × 某系統的下鑽網址 */
-  drillTo: (siteId: string, systemId: string) => string;
-  /** 畫布頁上某顆積木的下鑽頁（選取 Tag 的燈號積木用）；預覽等沒有頁面的情境不提供 */
+  /** 畫布頁上某顆積木的下鑽頁（值班情境的燈號）；預覽等沒有頁面的情境不提供 */
   blockTo?: (blockId: string) => string;
+  /** 前往另一個頁面（指揮官層的燈號進入值班情境頁）；預覽時不提供 */
+  pageTo?: (slug: string) => string;
 }
 
 export interface RenderProps<P> {
@@ -45,6 +44,8 @@ export interface BlockDefinition<P = unknown> {
   description: string;
   /** 積木庫裡的分組 */
   category: string;
+  /** 哪些層級的頁面可以使用（積木庫只列出符合的）；不寫＝都可以 */
+  layers?: Layer[];
   icon: ReactNode;
   defaultProps: () => P;
   /** 新增時的預設名稱；n 是頁面上同種積木的序號 */

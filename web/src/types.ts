@@ -38,8 +38,6 @@ export interface SystemDef {
   defaultStaleMinutes: number;
   metrics: MetricDef[];
   tags: TagTemplate[];
-  /** FDM 有、但預設沒有放進這個系統的 Tag（示範「情境管理」加入 Tag 用） */
-  spare?: TagTemplate[];
 }
 
 export interface SiteDef {
@@ -62,38 +60,26 @@ export interface TagReading {
   /** Out of Control：超出管制界限（未超規格）→ 黃燈 */
   isOOC: boolean;
 }
-/** 一次向 FDM 批次取值的結果 */
+/** virtual tag 的最新值：值就是燈號代碼（對照見 lib/status.ts 的 LAMP_CODE） */
+export interface VTagReading {
+  value: number | null;
+}
+
+/** 一次向 FDM 批次取值的結果（只取燈號用的 virtual tag） */
 export type Snapshot = {
   updatedAt: number;
-  /** 依「廠區|Tag」存放；FDM 沒有的 Tag 不會出現 */
-  readings: Record<string, TagReading>;
+  /** 依「廠區|virtual tag」存放；FDM 沒有的 virtual tag 不會出現 */
+  readings: Record<string, VTagReading>;
 };
 
-/**
- * 情境定義（介面上稱「情境」，程式內部沿用 system 命名；由情境負責人在「情境管理」維護）：各廠區包含哪些 Tag。
- * 燈號積木只記住「廠區 + 情境代號」，修改這裡後所有引用的積木一起更新。
- */
-export interface SystemConfig {
-  id: string;
-  name: string;
-  short: string;
-  owner: string;
-  /** 超過幾分鐘沒有 FDM 資料就判定為灰燈 */
-  staleMinutes: number;
-  /** 廠區代號 → Tag 名稱 */
-  tags: Record<string, string[]>;
-  /** 在情境管理新增的情境（內建情境不能刪除） */
-  custom?: boolean;
-  updatedAt?: number;
+/** 下鑽時由 virtual tag 讀回的 InSQL tag 清單與數值 */
+export interface VTagDetail {
+  at: number;
+  tags: (TagReading & { key: string; unit: string; decimals: number })[];
 }
 
-/** 情境定義的變更紀錄 */
-export interface SystemLogEntry {
-  at: number;
-  systemId: string;
-  who: string;
-  text: string;
-}
+/** 頁面層級：值班情境（燈號 = virtual tag，點了下鑽）／戰情指揮官（燈號 = 值班情境頁，點了進入該頁） */
+export type Layer = 'duty' | 'command';
 
 export interface Scope {
   sites: string[];
@@ -103,6 +89,8 @@ export interface Scope {
 export interface PageDef {
   slug: string;
   title: string;
+  /** 內建頁面的層級（預設值班情境） */
+  layer?: Layer;
   /** 有 scope → 燈號由 FDM 即時計算；沒有 → 示意頁，使用固定狀態 */
   scope?: Scope;
   fixedStatus?: Status;
@@ -122,23 +110,33 @@ export interface PageDef {
 /** 積木尺寸：小 / 中 / 大 */
 export type BlockSize = 'S' | 'M' | 'L';
 
-/** 燈號積木選取的一個 Tag（廠區 + Tag 名稱） */
+/** 燈號積木選取的一個 Tag（廠區 + Tag 名稱；舊版資料） */
 export interface TagRef {
   site: string;
   tag: string;
 }
 
+/** 一個 virtual tag（廠區 + 名稱） */
+export interface VTagRef {
+  site: string;
+  name: string;
+}
+
 /**
- * 「燈號積木」(type: 'lamp') 的內容。燈號完全由 FDM 旗標決定：
- * 任一 Tag isOOS → 紅；否則任一 isOOC → 黃；都正常 → 綠；全部無資料 → 灰。
+ * 值班情境層的「燈號積木」(type: 'lamp')：綁一個 virtual tag，值就是燈號代碼；點了下鑽 InSQL tag 清單。
  */
 export interface LampProps {
-  /** 選取的 Tag */
-  tags?: TagRef[];
-  /** 整個情境：顯示某廠區某情境所有 Tag 的彙整燈號（文字如「3 台異常」，點了下鑽） */
+  vtag?: VTagRef;
+  /** 舊版：整個情境（廠區 + 情境代號），讀取時轉成對應的 virtual tag */
   source?: { site: string; system: string };
-  /** 舊版（自訂算式時期）的資料點；讀取時轉成 tags，條件算式已不再使用 */
+  /** 舊版：選取的 Tag／自訂算式的資料點；已不再使用 */
+  tags?: TagRef[];
   vars?: { name: string; site?: string; tag?: string }[];
+}
+
+/** 戰情指揮官層的「值班情境燈號」(type: 'duty')：指向一個值班情境頁 */
+export interface DutyProps {
+  page: string;
 }
 
 /**
@@ -164,4 +162,6 @@ export interface UserPage {
   createdAt: number;
   /** 內建頁面（燈號牆）的版面：預設由程式產生，使用者改過才會存下來 */
   builtin?: boolean;
+  /** 頁面層級；舊資料沒有這個欄位時視為值班情境 */
+  layer?: Layer;
 }

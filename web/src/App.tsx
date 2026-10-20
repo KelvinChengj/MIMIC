@@ -2,16 +2,13 @@ import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router
 import { registerBuiltinBlocks } from './blocks';
 import { Layout } from './components/Layout';
 import { NotFound } from './components/PageParts';
-import { DrillRoute } from './pages/DrillPage';
 import { EditRoute } from './pages/EditRoute';
-import { LampDrillRoute } from './pages/LampDrillPage';
+import { LampDrillRoute, LegacyDrillRoute } from './pages/LampDrillPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PageRoute } from './pages/PageRoute';
-import { SystemEditRoute } from './pages/SystemEditPage';
-import { SystemsPage } from './pages/SystemsPage';
+import { VTagDrillRoute, VTagsPage } from './pages/VTagsPage';
 import { FavoritesProvider } from './state/FavoritesContext';
 import { FdmProvider } from './state/FdmContext';
-import { SystemsProvider } from './state/SystemsContext';
 import { UiProvider } from './state/UiContext';
 import { UserPagesProvider } from './state/UserPagesContext';
 
@@ -24,30 +21,29 @@ export default function App() {
   return (
     <Router>
       <UiProvider>
-        <SystemsProvider>
-          <UserPagesProvider>
-            {/* FDM 取值要知道「需要哪些 Tag」，所以放在情境定義與頁面之內 */}
-            <FdmProvider>
-              <FavoritesProvider>
-                <Routes>
-                  <Route element={<Layout />}>
-                    <Route index element={<Navigate to="/p/overview" replace />} />
-                    <Route path="/p/:slug" element={<PageRoute />} />
-                    <Route path="/p/:slug/edit" element={<EditRoute />} />
-                    <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
-                    <Route path="/p/:slug/:site/:system" element={<DrillRoute />} />
-                    <Route path="/explore" element={<ExplorePage />} />
-                    <Route path="/scenarios" element={<SystemsPage />} />
-                    <Route path="/scenarios/:id" element={<SystemEditRoute />} />
-                    {/* 舊網址（改名「情境」之前） */}
-                    <Route path="/systems/*" element={<Navigate to="/scenarios" replace />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </FavoritesProvider>
-            </FdmProvider>
-          </UserPagesProvider>
-        </SystemsProvider>
+        <UserPagesProvider>
+          {/* FDM 取值要知道「頁面用到哪些 virtual tag」，所以放在頁面之內 */}
+          <FdmProvider>
+            <FavoritesProvider>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route index element={<Navigate to="/p/overview" replace />} />
+                  <Route path="/p/:slug" element={<PageRoute />} />
+                  <Route path="/p/:slug/edit" element={<EditRoute />} />
+                  <Route path="/p/:slug/b/:blockId" element={<LampDrillRoute />} />
+                  <Route path="/p/:slug/:site/:system" element={<LegacyDrillRoute />} />
+                  <Route path="/explore" element={<ExplorePage />} />
+                  <Route path="/vtags" element={<VTagsPage />} />
+                  <Route path="/vtags/:site/:name" element={<VTagDrillRoute />} />
+                  {/* 舊網址（系統管理 / 情境管理） */}
+                  <Route path="/systems/*" element={<Navigate to="/vtags" replace />} />
+                  <Route path="/scenarios/*" element={<Navigate to="/vtags" replace />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </FavoritesProvider>
+          </FdmProvider>
+        </UserPagesProvider>
       </UiProvider>
     </Router>
   );

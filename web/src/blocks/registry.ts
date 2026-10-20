@@ -1,5 +1,5 @@
 import { newId } from '../lib/blocks';
-import type { PageBlock } from '../types';
+import type { Layer, PageBlock } from '../types';
 import { nextFreePosition, type Footprint } from './layout';
 import type { BlockDefinition } from './types';
 
@@ -17,11 +17,11 @@ export function registerBlock<P>(def: BlockDefinition<P>) {
 export const getBlockDef = (type: string) => defs.get(type);
 export const listBlockDefs = () => [...defs.values()];
 
-/** 積木庫分組（保持註冊順序；inLibrary: false 的積木不列出） */
-export function blockLibrary(): { category: string; items: BlockDefinition<any>[] }[] {
+/** 積木庫分組（保持註冊順序；inLibrary: false 或不適用這個層級的積木不列出） */
+export function blockLibrary(layer?: Layer): { category: string; items: BlockDefinition<any>[] }[] {
   const groups = new Map<string, BlockDefinition<any>[]>();
   for (const d of defs.values()) {
-    if (d.inLibrary === false) continue;
+    if (d.inLibrary === false || (layer && d.layers && !d.layers.includes(layer))) continue;
     groups.set(d.category, [...(groups.get(d.category) ?? []), d]);
   }
   return [...groups].map(([category, items]) => ({ category, items }));
@@ -56,9 +56,7 @@ export function normalizeBlock(raw: any): PageBlock {
     size: 'M',
     x: raw.x ?? 24,
     y: raw.y ?? 24,
-    // 條件算式已不再使用，只保留選過的 Tag
-    props: {
-      tags: (raw.vars ?? []).flatMap((v: { site?: string; tag?: string }) => (v.site && v.tag ? [{ site: v.site, tag: v.tag }] : [])),
-    },
+    // 條件算式已不再使用；燈號改綁 virtual tag，需重新選擇
+    props: {},
   };
 }

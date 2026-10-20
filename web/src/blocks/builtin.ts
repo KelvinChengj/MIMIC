@@ -1,5 +1,6 @@
 import { SITES, SYSTEMS, PAGES } from '../catalog/catalog';
-import type { LampProps, PageBlock, PageDef, UserPage } from '../types';
+import { vtagName } from '../lib/fdm';
+import type { DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -13,10 +14,15 @@ const GAP_Y = 14;
 const X0 = 150;
 const Y0 = 112;
 
+const textAt = (out: PageBlock[], id: string, content: string, size: 'S' | 'M', x: number, cy: number, centerW?: number) => {
+  const fp = textFootprint(content, size);
+  const left = centerW ? x + (centerW - fp.w) / 2 : x;
+  out.push(mk(id, 'text', { text: content }, { size, x: Math.round(left), y: Math.round(cy - fp.h / 2) }));
+};
+
 /**
- * 內建燈號牆頁面的預設版面：全部都是「燈號」與「文字」積木。
- * 每個廠區 × 情境是一顆「整個情境」的小燈號積木，欄名、列名與標題是文字積木。
- * 使用者可以像自建頁面一樣在畫布上移動、縮放、增刪。
+ * 值班情境頁的預設版面：全部都是「燈號」與「文字」積木。
+ * 每個廠區 × 系統是一顆小燈號，綁該格的 virtual tag；欄名、列名與標題是文字積木。
  */
 export function defaultWallLayout(page: PageDef): PageBlock[] {
   const scope = page.scope!;
@@ -24,22 +30,15 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
   const systems = SYSTEMS.filter((s) => scope.systems.includes(s.id));
   const out: PageBlock[] = [];
 
-  const text = (id: string, content: string, size: 'S' | 'M', x: number, cy: number, centerW?: number) => {
-    const fp = textFootprint(content, size);
-    const left = centerW ? x + (centerW - fp.w) / 2 : x;
-    out.push(mk(id, 'text', { text: content }, { size, x: Math.round(left), y: Math.round(cy - fp.h / 2) }));
-  };
-
-  text('title', '燈號牆 · 廠區 × 情境', 'M', 24, 40);
-  systems.forEach((sys, c) => text(`col-${sys.id}`, sys.name, 'S', X0 + c * (TILE.w + GAP_X), Y0 - 24, TILE.w));
+  textAt(out, 'title', '值班燈號 · 廠區 × 系統', 'M', 24, 40);
+  systems.forEach((sys, c) => textAt(out, `col-${sys.id}`, sys.name, 'S', X0 + c * (TILE.w + GAP_X), Y0 - 24, TILE.w));
   sites.forEach((site, r) => {
     const y = Y0 + r * (TILE.h + GAP_Y);
-    text(`row-${site.id}`, site.label, 'S', 24, y + TILE.h / 2);
+    textAt(out, `row-${site.id}`, site.label, 'S', 24, y + TILE.h / 2);
     systems.forEach((sys, c) =>
       out.push(
         mk(`cell-${site.id}-${sys.id}`, 'lamp', {
-          tags: [],
-          source: { site: site.id, system: sys.id },
+          vtag: { site: site.id, name: vtagName(site.id, sys.id) },
         } satisfies LampProps, { title: `${site.label} ${sys.name}`, size: 'S', x: X0 + c * (TILE.w + GAP_X), y }),
       ),
     );
@@ -47,9 +46,30 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
   return out;
 }
 
-/** 範圍涵蓋多個格子的內建頁面（燈號牆）用積木畫布呈現；單一格子的頁面是下鑽頁 */
-export const isWallPage = (page: PageDef) =>
-  !!page.scope && page.scope.sites.length * page.scope.systems.length > 1;
+/** 內建的值班情境頁：範圍是所有廠區 × 單一系統的頁面（Power、UPW…），也是全廠總覽指揮的對象 */
+export const DUTY_HOME = PAGES.filter((p) => !p.explore && p.scope?.systems.length === 1 && p.scope.sites.length === SITES.length).map((p) => p.slug);
+
+const DUTY = { w: 192, h: 176, gap: 20, perRow: 3 };
+
+/** 戰情指揮官頁的預設版面：每個值班情境一顆中尺寸燈號，點了進入該值班情境 */
+export function defaultCommandLayout(): PageBlock[] {
+  const out: PageBlock[] = [];
+  textAt(out, 'title', '戰情指揮 · 值班情境總覽', 'M', 24, 40);
+  textAt(out, 'hint', '點燈號進入值班情境', 'S', 24, 76);
+  DUTY_HOME.forEach((slug, i) =>
+    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, {
+      size: 'M',
+      x: 24 + (i % DUTY.perRow) * (DUTY.w + DUTY.gap),
+      y: 110 + Math.floor(i / DUTY.perRow) * (DUTY.h + DUTY.gap),
+    })),
+  );
+  return out;
+}
+
+export const builtinLayer = (page: PageDef): Layer => page.layer ?? 'duty';
+
+/** 有資料範圍的內建頁面都用積木畫布呈現（值班情境或戰情指揮官） */
+export const isWallPage = (page: PageDef) => !!page.scope;
 
 const cache = new Map<string, UserPage>();
 
@@ -59,16 +79,16 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
   if (!page || !isWallPage(page)) return undefined;
   let cached = cache.get(slug);
   if (!cached) {
-    cached = { slug, title: page.title, blocks: defaultWallLayout(page), createdAt: 0, builtin: true };
+    const layer = builtinLayer(page);
+    const blocks = layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
+    cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer };
     cache.set(slug, cached);
   }
   return cached;
 }
 
-/** 內建下鑽頁 = 系統摘要積木 + Tag 清單積木 */
-export function drillPageBlocks(site: string, system: string): PageBlock[] {
-  return [
-    mk('summary', 'summary', { site, system, showActions: true }, { size: 'L' }),
-    mk('tags', 'tags', { site, system, filter: 'abnormal' }, { title: 'Tag 燈號清單' }),
-  ];
+/** 所有積木畫布頁：使用者存過的頁面 + 還沒改過的內建頁面預設版面 */
+export function allLayoutPages(stored: UserPage[]): UserPage[] {
+  const have = new Set(stored.map((p) => p.slug));
+  return [...stored, ...PAGES.filter((p) => !have.has(p.slug)).flatMap((p) => builtinLayoutPage(p.slug) ?? [])];
 }

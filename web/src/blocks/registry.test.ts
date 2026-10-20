@@ -1,33 +1,28 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerBuiltinBlocks } from './index';
 import { blockLibrary, createBlock, footprintOf, getBlockDef, listBlockDefs, normalizeBlock, registerBlock } from './registry';
-import { evaluateLamp, lampTags } from '../lib/blocks';
 import { SCALE } from './layout';
-import { fetchLatest } from '../lib/fdm';
-import { collectTagKeys, defaultSystems, makeEnv } from '../lib/systems';
+import { fetchLamps, VTAGS } from '../lib/fdm';
+import { buildTagIndex } from '../lib/blocks';
+import { builtinLayoutPage } from './builtin';
 import type { PageBlock } from '../types';
 import type { BlockDefinition, BlockEnv } from './types';
 
 beforeAll(() => registerBuiltinBlocks());
 
 const env = (): BlockEnv => {
-  const systems = defaultSystems();
-  return makeEnv(systems, fetchLatest(collectTagKeys(systems, []), 0, 0));
+  const snapshot = fetchLamps(VTAGS.map((v) => v.key), 0, 0);
+  return { snapshot, index: buildTagIndex(snapshot), getPage: (slug) => builtinLayoutPage(slug) };
 };
 
 describe('積木庫 registry', () => {
-  it('內建五種積木都已註冊', () => {
-    expect(listBlockDefs().map((d) => d.type).slice(0, 5)).toEqual(['lamp', 'wall', 'summary', 'tags', 'text']);
+  it('內建三種積木都已註冊', () => {
+    expect(listBlockDefs().map((d) => d.type).slice(0, 3)).toEqual(['lamp', 'duty', 'text']);
   });
-  it('積木庫目前只開放「燈號」與「文字」；燈號牆、系統摘要、Tag 清單仍註冊但不開放使用者新增', () => {
-    expect(blockLibrary().map((g) => [g.category, g.items.map((d) => d.type)])).toEqual([
-      ['燈號', ['lamp']],
-      ['版面', ['text']],
-    ]);
-    for (const t of ['wall', 'summary', 'tags']) {
-      expect(getBlockDef(t)).toBeDefined();
-      expect(getBlockDef(t)!.inLibrary).toBe(false);
-    }
+  it('積木庫依頁面層級：值班情境只有燈號、指揮官只有值班情境燈號，文字兩層都有', () => {
+    const lib = (layer?: 'duty' | 'command') => blockLibrary(layer).filter((g) => g.category !== '測試').map((g) => [g.category, g.items.map((d) => d.type)]);
+    expect(lib('duty')).toEqual([['燈號', ['lamp']], ['版面', ['text']]]);
+    expect(lib('command')).toEqual([['燈號', ['duty']], ['版面', ['text']]]);
   });
   it('重複註冊同一種類會丟錯', () => {
     expect(() => registerBlock(getBlockDef('lamp') as BlockDefinition<unknown>)).toThrow();
@@ -51,7 +46,6 @@ describe('積木庫 registry', () => {
     expect([a.title, b.title]).toEqual(['燈號 1', '燈號 2']);
     expect(a.size).toBe('M');
     expect(b.x).toBeGreaterThanOrEqual(a.x + footprintOf(a).w);
-    expect(createBlock('wall', []).size).toBe('S');
   });
   it('未知種類 createBlock 丟錯，footprintOf 有預設值', () => {
     expect(() => createBlock('nope', [])).toThrow();
@@ -74,11 +68,11 @@ describe('積木庫 registry', () => {
       }
     }
   });
-  it('舊格式（只有燈號積木、自訂算式）轉成新格式：只保留選過的 Tag', () => {
+  it('舊格式（只有燈號積木、自訂算式）轉成燈號積木，需重新選 virtual tag', () => {
     const legacy = { id: 'b1', title: '舊', x: 10, y: 20, vars: [{ name: 'A', site: 'f18p2', tag: 'UPW-POL-02.TOC' }, { name: 'B' }], valueExpr: '', unit: 'ppb', redExpr: 'A > 1', yellowExpr: '' };
     expect(normalizeBlock(legacy)).toEqual({
       id: 'b1', type: 'lamp', title: '舊', size: 'M', x: 10, y: 20,
-      props: { tags: [{ site: 'f18p2', tag: 'UPW-POL-02.TOC' }] },
+      props: {},
     });
     const modern = { id: 'b2', type: 'text', title: '', size: 'L', x: 0, y: 0, props: { text: 'x' } };
     expect(normalizeBlock(modern)).toEqual(modern);
@@ -86,13 +80,13 @@ describe('積木庫 registry', () => {
   });
   it('各積木對整頁燈號的貢獻', () => {
     const e = env();
-    const lamp = { ...createBlock('lamp', []), props: { tags: [{ site: 'f18p2', tag: 'UPW-POL-02.TOC' }] } };
-    expect(getBlockDef('lamp')!.status!(lamp, e)).toBe(evaluateLamp(lampTags(lamp.props), e.index).status);
+    const lamp = { ...createBlock('lamp', []), props: { vtag: { site: 'f18p2', name: 'F18P2.UPW.LAMP' } } };
     expect(getBlockDef('lamp')!.status!(lamp, e)).toBe('red');
-    const wall = { ...createBlock('wall', []), props: { sites: ['f18p2'], systems: ['upw'] } };
-    expect(getBlockDef('wall')!.status!(wall, e)).toBe('red');
-    const calm = { ...createBlock('summary', []), props: { site: 'f18p1', system: 'upw' } };
-    expect(getBlockDef('summary')!.status!(calm, e)).toBe('green');
+    expect(getBlockDef('lamp')!.status!({ ...lamp, props: {} }, e)).toBe('gray');
+    // 舊版「整個情境」自動對到 virtual tag
+    expect(getBlockDef('lamp')!.status!({ ...lamp, props: { source: { site: 'f18p1', system: 'upw' } } }, e)).toBe('green');
+    const duty = { ...createBlock('duty', []), props: { page: 'upw' } };
+    expect(getBlockDef('duty')!.status!(duty, e)).toBe('red');
     expect(getBlockDef('text')!.status).toBeUndefined();
   });
 });

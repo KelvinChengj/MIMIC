@@ -43,26 +43,28 @@ export function worstOf(statuses: Status[]): Status {
   return 'gray';
 }
 
-/** 磚塊底下的小字 */
-export function tileText(sum: Summary, staleMinutes: number): string {
-  switch (sum.status) {
-    case 'red': return `${sum.red} 台異常`;
-    case 'yellow': return `${sum.yellow}/${sum.total} 台`;
-    case 'green': return `${sum.total} 台`;
-    default: return `${staleMinutes} 分無資料`;
-  }
-}
-
 export function formatValue(v: number | null, decimals: number): string {
   return v == null ? '—' : v.toFixed(decimals);
 }
 
-/** 燈號規則說明（固定，由 FDM 旗標決定，使用者不需要設定） */
-export function ruleLines(staleMinutes: number): { status: Status; text: string }[] {
+/**
+ * virtual tag 的燈號代碼對照（由上游定義；要改代碼只改這裡）。
+ * 不在表上的值與沒有值一律灰燈。
+ */
+export const LAMP_CODE: Record<number, Status> = { 0: 'green', 1: 'yellow', 2: 'red' };
+
+export function vtagStatus(value: number | null | undefined): Status {
+  return value == null ? 'gray' : (LAMP_CODE[value] ?? 'gray');
+}
+
+const codeOf = (st: Status) => Object.entries(LAMP_CODE).find(([, v]) => v === st)?.[0];
+
+/** 值班情境燈號的規則說明（virtual tag 的值 → 燈號） */
+export function ruleLines(): { status: Status; text: string }[] {
   return [
-    { status: 'red', text: '任一 Tag 為 OOS（FDM 判定超出規格）' },
-    { status: 'yellow', text: '無紅燈，且任一 Tag 為 OOC（FDM 判定超出管制）' },
-    { status: 'green', text: '所有 Tag 皆在管制範圍內' },
-    { status: 'gray', text: `Tag 超過 ${staleMinutes} 分鐘未收到 FDM 資料` },
+    { status: 'red', text: `virtual tag 值為 ${codeOf('red')}（上游判定：任一 InSQL tag 為 OOS）` },
+    { status: 'yellow', text: `virtual tag 值為 ${codeOf('yellow')}（上游判定：任一 InSQL tag 為 OOC）` },
+    { status: 'green', text: `virtual tag 值為 ${codeOf('green')}` },
+    { status: 'gray', text: 'virtual tag 沒有值，或值不在代碼表上' },
   ];
 }

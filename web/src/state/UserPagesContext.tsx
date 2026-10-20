@@ -1,15 +1,16 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { builtinLayoutPage } from '../blocks/builtin';
+import { builtinLayer, builtinLayoutPage } from '../blocks/builtin';
+import { pageBySlug } from '../catalog/catalog';
 import { nextFreePosition, snap } from '../blocks/layout';
 import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
 import { newId } from '../lib/blocks';
-import type { PageBlock, UserPage } from '../types';
+import type { Layer, PageBlock, UserPage } from '../types';
 import { usePersistentState } from './storage';
 
 interface UserPagesValue {
   pages: UserPage[];
   getPage: (slug: string) => UserPage | undefined;
-  createPage: (title: string) => string;
+  createPage: (title: string, layer: Layer) => string;
   renamePage: (slug: string, title: string) => void;
   deletePage: (slug: string) => void;
   /** 內建頁面：丟掉使用者改過的版面，回到預設 */
@@ -22,26 +23,40 @@ interface UserPagesValue {
 }
 const Ctx = createContext<UserPagesValue | null>(null);
 
+/** 存下來的內建頁面版面，層級仍和目前的內建定義一致才使用 */
+function fresh(p: UserPage) {
+  const def = p.builtin ? pageBySlug(p.slug) : undefined;
+  return !def || (p.layer ?? 'duty') === builtinLayer(def);
+}
+
 export function UserPagesProvider({ children }: { children: ReactNode }) {
   const [stored, setPages] = usePersistentState<UserPage[]>('mimic.userpages.v1', []);
-  // 舊版只有燈號積木、沒有 type / size 欄位；讀進來時統一轉成新格式
-  const pages = useMemo(() => stored.map((p) => ({ ...p, blocks: p.blocks.map(normalizeBlock) })), [stored]);
+  // 舊版只有燈號積木、沒有 type / size 欄位；讀進來時統一轉成新格式。
+  // 內建頁面的層級改過（例如全廠總覽改為戰情指揮官）時，舊的版面不再適用，改用新的預設版面
+  const pages = useMemo(
+    () =>
+      stored
+        .filter(fresh)
+        .map((p) => ({ ...p, blocks: p.blocks.map(normalizeBlock) })),
+    [stored],
+  );
 
   const value = useMemo<UserPagesValue>(() => {
     // 內建頁面（燈號牆）第一次被修改時，才把預設版面存進來
     const patchPage = (slug: string, fn: (p: UserPage) => UserPage) =>
       setPages((prev) => {
-        if (prev.some((p) => p.slug === slug)) return prev.map((p) => (p.slug === slug ? fn(p) : p));
+        const list = prev.filter(fresh);
+        if (list.some((p) => p.slug === slug)) return list.map((p) => (p.slug === slug ? fn(p) : p));
         const seed = builtinLayoutPage(slug);
-        return seed ? [...prev, fn(seed)] : prev;
+        return seed ? [...list, fn(seed)] : list;
       });
     const find = (slug: string) => pages.find((p) => p.slug === slug) ?? builtinLayoutPage(slug);
     return {
       pages,
       getPage: find,
-      createPage: (title) => {
+      createPage: (title, layer) => {
         const slug = newId('u');
-        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now() }]);
+        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer }]);
         return slug;
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),

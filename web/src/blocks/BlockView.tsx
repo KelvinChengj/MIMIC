@@ -16,11 +16,3 @@ export function BlockRender({ block, mode, host }: { block: PageBlock; mode: 'fl
   return <Render block={block} mode={mode} host={host} />;
 }
 
-/** 內建頁面用：積木由上而下排版 */
-export function BlockStack({ blocks, host }: { blocks: PageBlock[]; host: BlockHost }) {
-  return (
-    <div className="stack">
-      {blocks.map((b) => <BlockRender key={b.id} block={b} mode="flow" host={host} />)}
-    </div>
-  );
-}

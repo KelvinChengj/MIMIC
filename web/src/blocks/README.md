@@ -1,6 +1,6 @@
 # 積木庫（Block Store）
 
-使用者看到的**所有主要呈現**都是積木：內建的燈號牆頁面是一個「燈號牆」積木，下鑽頁是「系統摘要」＋「Tag 清單」兩個積木，自建頁面的畫布上則可以自由擺放任何積木。大家共用同一套定義，所以新增積木種類只要寫一次。
+使用者看到的**所有主要呈現**都是積木：值班情境頁與戰情指揮官頁（內建與自建）都是積木畫布。大家共用同一套定義，所以新增積木種類只要寫一次。
 
 ```
 blocks/
@@ -8,14 +8,20 @@ blocks/
   registry.ts     積木庫本體：registerBlock / getBlockDef / blockLibrary / createBlock
   index.ts        註冊內建積木（順序 = 積木庫顯示順序）
   layout.ts       尺寸標籤、格線對齊、找空位、畫布範圍（純函式）
-  BlockView.tsx   BlockRender（依 type 找到元件）、BlockStack（內建頁面由上而下排版）
-  builtin.ts      內建頁面由哪些積木組成
-  lamp/ wall/ summary/ tags/ text/   各積木種類：定義 + 呈現 + 編輯器
+  BlockView.tsx   BlockRender（依 type 找到元件）
+  host.ts         積木的連結（下鑽、進入其他頁面）
+  builtin.ts      內建頁面的預設版面（值班情境、戰情指揮官）
+  lamp/ duty/ text/   各積木種類：定義 + 呈現 + 編輯器
 ```
 
 ## 內建頁面也是積木畫布
 
-多個格子的內建頁面（全廠總覽、各系統頁）的預設版面由 `builtin.ts` 的 `defaultWallLayout` 產生：每個廠區 × 系統一顆「整個系統」（`source: { site, system }`）的小尺寸燈號積木，加上欄名、列名、標題的文字積木。使用者第一次修改時才把版面存進 `mimic.userpages.v1`（`builtin: true`），之後與自建頁面走同一套編輯與儲存；「還原預設版面」就是把存下的版面丟掉。單一格子的頁面是下鑽頁（摘要 + Tag 清單積木，流式排版）。
+內建頁面的預設版面由 `builtin.ts` 產生：
+
+- 值班情境（各系統頁、Explore 的頁面）：`defaultWallLayout`，每個廠區 × 系統一顆綁 virtual tag（`vtag: { site, name }`）的小燈號，加上欄名、列名、標題的文字積木。
+- 戰情指揮官（全廠總覽）：`defaultCommandLayout`，每個內建值班情境一顆中尺寸的值班情境燈號（`page: slug`）。
+
+使用者第一次修改時才把版面存進 `mimic.userpages.v1`（`builtin: true`、`layer`），之後與自建頁面走同一套編輯與儲存；「還原預設版面」就是把存下的版面丟掉。內建頁面的層級改變時，層級不符的舊版面不再使用。
 
 ## 資料模型
 
@@ -23,20 +29,18 @@ blocks/
 
 - `type`：對應 registry 裡註冊的種類
 - `size`：`'S' | 'M' | 'L'`（小 / 中 / 大），由各積木自己決定三種尺寸長什麼樣
-- `props`：該種類自己的內容（例如燈號積木的 `vars / redExpr / yellowExpr`）
+- `props`：該種類自己的內容（例如燈號積木的 `vtag`、值班情境燈號的 `page`）
 - 自建頁面存在 localStorage（`mimic.userpages.v1`）；舊版沒有 `type` 的資料讀取時會自動轉成燈號積木（`normalizeBlock`）
 
 ## 內建積木
 
-| type | 名稱 | 說明 | 積木庫 | 對頁面燈號的貢獻 |
+| type | 名稱 | 層級 | 說明 | 對頁面燈號的貢獻 |
 |---|---|---|---|---|
-| `lamp` | 燈號 | 顯示一顆燈（磚塊格式同燈號牆），依 FDM 的 isOOS / isOOC 判定。資料來源：選擇 Tag，或某廠區某系統的「整個系統」 | ✓ | 該燈 |
-| `wall` | 燈號牆 | 廠區 × 系統矩陣，點燈號下鑽 | 隱藏（只給內建頁面） | 範圍內最差 |
-| `summary` | 系統摘要 | 單一系統整體燈號 + 判定規則 | 隱藏（只給內建頁面） | 該系統 |
-| `tags` | Tag 清單 | 名稱 / 說明 / 數值，依嚴重度排序 | 隱藏（只給內建頁面） | 該系統 |
-| `text` | 文字 | 標題或備註 | ✓ | 無 |
+| `lamp` | 燈號 | 值班情境 | 綁一個 virtual tag，值就是燈號代碼；點了下鑽 InSQL tag 清單 | 該燈 |
+| `duty` | 值班情境燈號 | 戰情指揮官 | 代表一個值班情境頁，取該頁燈號最差；點了進入該頁 | 該值班情境 |
+| `text` | 文字 | 兩層 | 標題或備註 | 無 |
 
-`inLibrary: false` 的積木仍然註冊（內建頁面靠它們組成，舊資料也還能顯示），只是積木庫面板不列出、使用者無法自己新增。要開放時把旗標拿掉即可。
+`layers` 決定積木庫在哪個層級的頁面列出（不寫＝兩層都可用）；`inLibrary: false` 的積木仍然註冊，只是積木庫不列出。
 
 ## 新增一種積木
 
@@ -72,7 +76,7 @@ export const gaugeBlock: BlockDefinition<GaugeProps> = {
 
 ### 約定
 
-- `Render` 會收到 `mode`：`flow`（內建頁面，寬度跟隨頁面）或 `canvas`（畫布上，寬度用 `footprint`）。需要固定高度（像燈號磚塊）就設 `fixedHeight: true`。
+- `Render` 會收到 `mode`（目前都是 `canvas`，寬度用 `footprint`）與 `host`（`blockTo` 下鑽、`pageTo` 進入其他頁面；預覽時兩者都沒有）。需要固定高度（像燈號磚塊）就設 `fixedHeight: true`。
 - 三種尺寸都要有意義：小＝只留最重要的資訊，大＝可以多一行說明或放大數值。
 - 編輯模式下積木內容的點擊會被外框攔截（才能拖曳），不用自己處理。
 - 編輯對話框裡需要共用、但不存進頁面的暫時狀態，可以用 `EditorProvider` 包住整個對話框（目前內建積木沒有使用）。

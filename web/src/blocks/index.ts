@@ -1,10 +1,8 @@
+import { dutyBlock } from './duty';
 import { lampBlock } from './lamp';
 import { registerBlock } from './registry';
-import { summaryBlock } from './summary';
-import { tagsBlock } from './tags';
 import type { BlockDefinition } from './types';
 import { textBlock } from './text';
-import { wallBlock } from './wall';
 
 let done = false;
 
@@ -15,6 +13,6 @@ let done = false;
 export function registerBuiltinBlocks() {
   if (done) return;
   done = true;
-  const builtin: BlockDefinition<any>[] = [lampBlock, wallBlock, summaryBlock, tagsBlock, textBlock];
+  const builtin: BlockDefinition<any>[] = [lampBlock, dutyBlock, textBlock];
   builtin.forEach((d) => registerBlock(d));
 }

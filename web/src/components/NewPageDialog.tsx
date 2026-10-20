@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
 import { useUserPages } from '../state/UserPagesContext';
+import { LAYER_META } from './LayerChip';
 import { Modal } from './Modal';
+import type { Layer } from '../types';
 
 const NEW_GROUP = '__new__';
 
@@ -15,10 +17,11 @@ export function NewPageDialog() {
   const [title, setTitle] = useState('');
   const [groupId, setGroupId] = useState(newPage?.groupId ?? groups[0]?.id ?? NEW_GROUP);
   const [groupName, setGroupName] = useState('');
+  const [layer, setLayer] = useState<Layer>('duty');
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const slug = createPage(title);
+    const slug = createPage(title, layer);
     const gid = groupId === NEW_GROUP || !groups.some((g) => g.id === groupId) ? addGroup(groupName || '我的頁面') : groupId;
     addSlug(gid, slug);
     closeNewPage();
@@ -29,7 +32,17 @@ export function NewPageDialog() {
   return (
     <Modal title="新增頁面" size="sm" onClose={closeNewPage}>
       <form className="newpage" onSubmit={submit}>
-        <p className="newpage__hint">建立後會進入空白畫布，可以自由新增燈號積木。</p>
+        <p className="newpage__hint">建立後會進入空白畫布，可以自由新增積木。</p>
+        <fieldset className="layer-pick">
+          <legend>頁面層級</legend>
+          {(['duty', 'command'] as Layer[]).map((l) => (
+            <label key={l} className={layer === l ? 'is-on' : ''}>
+              <input type="radio" name="np-layer" value={l} checked={layer === l} onChange={() => setLayer(l)} />
+              <b>{LAYER_META[l].label}</b>
+              <small>{LAYER_META[l].hint}</small>
+            </label>
+          ))}
+        </fieldset>
         <div className="ef">
           <label htmlFor="np-title">頁面名稱</label>
           <input id="np-title" className="ef__input ef__input--plain" autoFocus value={title} maxLength={40} placeholder="例：F18P2 超純水值班" onChange={(e) => setTitle(e.target.value)} />

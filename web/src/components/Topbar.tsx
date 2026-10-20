@@ -30,7 +30,7 @@ export function Topbar() {
 
   return (
     <header className="topbar">
-      <span className="topbar__updated" title={`開啟網頁或按重新整理時才向 FDM 取值（不自動更新）\n最近一次：1 次批次請求、${stats.lastTags} 個 Tag`}>
+      <span className="topbar__updated" title={`開啟網頁或按重新整理時才向 FDM 取值（不自動更新）\n最近一次請求：${stats.lastTags} 筆`}>
         更新 <time>{formatClock(snapshot.updatedAt)}</time>
       </span>
       <button className="icon-btn icon-btn--outline" aria-label="重新向 FDM 取值" title="重新向 FDM 取值" onClick={() => { startSpin(); refresh(); }}>
@@ -47,7 +47,7 @@ export function Topbar() {
           <div className="popover" role="dialog" aria-label="燈號說明">
             <h2>燈號說明</h2>
             <Legend />
-            <p className="popover__note">燈號由 FDM 判定：isOOS 亮紅、isOOC 亮黃。開啟網頁或按重新整理時才向 FDM 取值。</p>
+            <p className="popover__note">值班燈號 = virtual tag 的燈號代碼（2 紅、1 黃、0 綠）；指揮官燈號取值班情境最差。開啟網頁或按重新整理時才向 FDM 取值。</p>
           </div>
         )}
       </div>
