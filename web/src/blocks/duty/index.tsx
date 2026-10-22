@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { PHASE_OPTIONS, SYSTEM_OPTIONS } from '../../catalog/catalog';
 import { LampDot, StatusTile } from '../../components/StatusTile';
 import { dutySummary, dutyText } from '../../lib/pages';
 import { STATUS_META } from '../../lib/status';
@@ -45,6 +46,57 @@ function DutyRender({ block, host }: RenderProps<DutyProps>) {
   );
 }
 
+type DutyOption = ReturnType<typeof useDutyPages>[number];
+
+/** 依 System / Phase 篩選：涵蓋全系統、全廠（F18A）的頁面也算符合 */
+const fits = (value: string, want: string, all: string) => !want || value === all || value.split('、').includes(want);
+
+/** 值班情境頁很多：用關鍵字 + System + Phase 搜尋後點選 */
+function DutyPagePicker({ pages, selected, onPick }: { pages: DutyOption[]; selected: string; onPick: (slug: string) => void }) {
+  const [q, setQ] = useState('');
+  const [system, setSystem] = useState('');
+  const [phase, setPhase] = useState('');
+  const matches = useMemo(() => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    return pages.filter((p) => {
+      if (!fits(p.system, system, '全系統') || !fits(p.phase, phase, 'F18A')) return false;
+      const hay = `${p.title} ${p.slug} ${p.system} ${p.phase}`.toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+  }, [pages, q, system, phase]);
+
+  return (
+    <div className="tp__panel tp__panel--inline">
+      <div className="tp__search">
+        <input type="search" value={q} placeholder="搜尋頁面名稱、網址，例如 UPW、P2" aria-label="搜尋值班情境頁" onChange={(e) => setQ(e.target.value)} />
+        <select value={system} onChange={(e) => setSystem(e.target.value)} aria-label="篩選 System">
+          <option value="">全部 System</option>
+          {SYSTEM_OPTIONS.filter((s) => s !== '全系統').map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={phase} onChange={(e) => setPhase(e.target.value)} aria-label="篩選 Phase">
+          <option value="">全部 Phase</option>
+          {PHASE_OPTIONS.filter((s) => s !== 'F18A').map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+      <p className="tp__count" aria-live="polite">共 {matches.length} / {pages.length} 個值班情境頁</p>
+      <ul className="tp__list" role="listbox" aria-label="值班情境頁清單">
+        {matches.map((p) => {
+          const on = p.slug === selected;
+          return (
+            <li key={p.slug}>
+              <button type="button" role="option" aria-selected={on} className={on ? 'is-on' : ''} onClick={() => onPick(p.slug)}>
+                <span><b>{p.title}</b>{on && <em className="tp__added">已選取</em>}</span>
+                <small>{[p.system, p.phase].filter(Boolean).join(' · ') || '—'} · <code>mimic/p/{p.slug}</code></small>
+              </button>
+            </li>
+          );
+        })}
+        {matches.length === 0 && <li className="tp__none">找不到符合的值班情境頁</li>}
+      </ul>
+    </div>
+  );
+}
+
 function DutyEditor({ block, onProps }: EditorProps<DutyProps>) {
   const pages = useDutyPages();
   const d = useDuty(block.props.page);
@@ -52,13 +104,8 @@ function DutyEditor({ block, onProps }: EditorProps<DutyProps>) {
     <>
       <section className="be__sec">
         <h3>值班情境 <small>這顆燈代表哪個值班情境頁；燈號取該頁所有燈號最差，點了進入該頁</small></h3>
-        <div className="ef">
-          <label htmlFor="duty-page">值班情境頁</label>
-          <select id="duty-page" className="ef__input ef__input--plain" value={block.props.page} onChange={(e) => onProps({ page: e.target.value })}>
-            {!pages.some((p) => p.slug === block.props.page) && <option value={block.props.page}>（找不到頁面）</option>}
-            {pages.map((p) => <option key={p.slug} value={p.slug}>{p.title}</option>)}
-          </select>
-        </div>
+        <p className="duty-current">目前：<b>{d ? d.page.title : '（找不到頁面）'}</b></p>
+        <DutyPagePicker pages={pages} selected={block.props.page} onPick={(page) => onProps({ page })} />
         {d && <p className="be__note">{d.page.title}：{d.sum.total} 顆燈號，紅 {d.sum.red}、黃 {d.sum.yellow}、綠 {d.sum.green}、無資料 {d.sum.gray}。</p>}
       </section>
       <p className="be__note">指揮官層只看巨觀：不下鑽 Tag，點燈號直接進入值班情境的 MIMIC，再由值班情境下鑽。</p>

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { allLayoutPages, DUTY_HOME } from '../blocks/builtin';
 import { getBlockDef } from '../blocks/registry';
 import type { BlockEnv } from '../blocks/types';
-import { pageBySlug } from '../catalog/catalog';
+import { pageBySlug, SITES, SYSTEMS } from '../catalog/catalog';
 import { buildTagIndex, lampVTag, vtagKey } from '../lib/blocks';
 import { layerOf } from '../lib/pages';
 import { worstOf } from '../lib/status';
@@ -55,12 +55,22 @@ export function useResolvePage() {
 }
 
 /** 可以被戰情指揮官引用的值班情境頁（內建的系統頁排前面） */
+/** 頁面的 System / Phase：自建頁取使用者填的；內建頁由涵蓋範圍推出 */
+export function pageMetaOf(p: UserPage): { system: string; phase: string } {
+  if (p.system || p.phase) return { system: p.system ?? '', phase: p.phase ?? '' };
+  const scope = pageBySlug(p.slug)?.scope;
+  if (!scope) return { system: '', phase: '' };
+  const system = scope.systems.length === SYSTEMS.length ? '全系統' : scope.systems.map((id) => SYSTEMS.find((s) => s.id === id)?.name ?? id).join('、');
+  const phase = scope.sites.length === SITES.length ? 'F18A' : scope.sites.map((id) => SITES.find((s) => s.id === id)?.name ?? id).join('、');
+  return { system, phase };
+}
+
 export function useDutyPages() {
   const { pages } = useUserPages();
   return useMemo(() => {
     const all = allLayoutPages(pages).filter((p) => layerOf(p) === 'duty');
     const rank = (slug: string) => (DUTY_HOME.includes(slug) ? DUTY_HOME.indexOf(slug) : DUTY_HOME.length);
-    return all.sort((a, b) => rank(a.slug) - rank(b.slug)).map((p) => ({ slug: p.slug, title: p.title }));
+    return all.sort((a, b) => rank(a.slug) - rank(b.slug)).map((p) => ({ slug: p.slug, title: p.title, ...pageMetaOf(p) }));
   }, [pages]);
 }
 
