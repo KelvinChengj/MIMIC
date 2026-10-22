@@ -26,10 +26,12 @@ const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
     power: { 'PWR-TR1.LOAD': 84, 'PWR-UPS-A.LOAD': 82 },
   },
   f18p3: {
+    upw: { 'UPW-POL-03.TOC': 1.6 }, // 超出管制、未超規格 → 黃燈範例
     bulk: { 'GAS-GN2-01.PRS': 6.8, 'GAS-PN2-01.O2': 60 },
     mau: { 'MAU-01.TMP': 26, 'MAU-01.RH': 57, 'MAU-02.RH': 34 },
   },
   f18p7: {
+    upw: { 'UPW-POL-01.RES': 17.8 }, // 超出管制、未超規格 → 黃燈範例
     chem: { 'CHEM-HF-01.LVL': 12, 'CHEM-H2SO4-01.LVL': 14, 'CHEM-H2SO4-01.PRS': 1.2 },
     mau: { 'MAU-01.TMP': 23.8, 'MAU-02.DP': 280 },
     exhaust: { '*': null },

@@ -52,7 +52,7 @@ export const DUTY_HOME = PAGES.filter((p) => !p.explore && p.scope?.systems.leng
 /** 綠燈範例：目前全部正常的值班情境頁，分別用大、中、小尺寸展示 */
 const GREEN_EXAMPLES: { slug: string; size: BlockSize }[] = [
   { slug: 'f18p1-utility', size: 'L' },
-  { slug: 'f18p3-upw-particle', size: 'M' },
+  { slug: 'f18p2-bulk', size: 'M' },
   { slug: 'upw-drill', size: 'S' },
 ];
 const COMMAND_PRIORITY = ['upw', 'power', 'hvac', 'exhaust', 'gas', 'chemical'];

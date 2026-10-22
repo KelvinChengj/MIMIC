@@ -170,6 +170,7 @@ export const PAGES: PageDef[] = [
   { slug: 'chemical', title: 'Chemical 化學品', scope: { sites: allSites, systems: ['chem'] } },
   // 綠燈範例：F18P1 的公用系統目前都正常（戰情指揮官頁用來展示綠燈）
   { slug: 'f18p1-utility', title: 'F18P1 公用系統值班', scope: { sites: ['f18p1'], systems: ['upw', 'bulk', 'mau', 'exhaust'] } },
+  { slug: 'f18p2-bulk', title: 'F18P2 大宗氣體值班', scope: { sites: ['f18p2'], systems: ['bulk'] } },
 
   // ── Explore：他人建立的頁面 ──
   {
