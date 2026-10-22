@@ -8,12 +8,14 @@ export type { FavGroup };
 
 const EXPLORE_GROUP = 'explore';
 
+/**
+ * 預設的側欄：展示「我的最愛當專案清單」的用法，分類即專案、編號即優先順位。
+ * 使用者改過之後以自己的設定為準；「重置展示資料」會回到這裡。
+ */
 const DEFAULT_GROUPS: FavGroup[] = [
-  {
-    id: 'plant',
-    name: '廠務監控',
-    slugs: ['overview', 'power', 'upw', 'hvac', 'exhaust', 'gas', 'chemical'],
-  },
+  { id: 'proj-upw', name: '① UPW 擴充專案', slugs: ['upw', 'f18p2-upw-duty', 'upw-toc-daily'] },
+  { id: 'proj-mau', name: '② MAU 節能專案', slugs: ['hvac', 'mau-humidity'] },
+  { id: 'duty', name: '③ 日常值班', slugs: ['overview', 'power', 'exhaust', 'gas', 'chemical'] },
 ];
 
 /** 已移除的示意頁（沒有任何功能）與只放這些頁面的預設分類；讀取舊的側欄設定時一併清掉 */
