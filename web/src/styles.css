@@ -210,10 +210,6 @@ code { font-family: var(--mono); font-size: 0.92em; }
 .search-box input::-webkit-search-cancel-button { display: none; }
 .search-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; height: 100%; font-size: 16px; color: var(--text); }
 .filters { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
-.select-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; font-size: 13.5px; }
-.select-chip.is-set { border-color: var(--primary); background: #eef3f8; font-weight: 600; }
-.select-chip select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
-.select-chip:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .filters__count { margin-left: auto; color: var(--muted); font-size: 13px; }
 .table-card { padding: 0; overflow-x: auto; }
 .explore-table { width: 100%; border-collapse: collapse; min-width: 880px; }
@@ -616,3 +612,18 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .vtstate { display: inline-flex; align-items: center; gap: 6px; }
 .muted { color: var(--muted); }
 .tp__list button.is-on { background: #eef3f8; }
+
+/* ── Explore：表頭排序 + 篩選列（AG Grid 形式） ── */
+.explore-table th.sortable { padding: 0; }
+.explore-table th.sortable button { display: inline-flex; align-items: center; gap: 6px; width: 100%; padding: 14px 12px; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; white-space: nowrap; }
+.explore-table th.sortable.num button { justify-content: flex-end; }
+.explore-table th.sortable button:hover { background: #f1efec; }
+.explore-table th.sortable.is-sorted button { color: var(--text); }
+.sort-ind { font-size: 10px; color: #b3b8bf; }
+.is-sorted .sort-ind { color: var(--primary); }
+.explore-table .filter-row th { padding: 6px 8px; background: #fff; font-weight: 400; }
+.col-filter { position: relative; display: flex; align-items: center; }
+.col-filter input, .col-filter select { width: 100%; min-width: 64px; height: 30px; padding: 0 24px 0 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); font: inherit; font-size: 12.5px; color: var(--text); }
+.col-filter select { padding-right: 4px; }
+.col-filter input:focus, .col-filter select:focus { border-color: var(--focus); outline: 2px solid rgba(91, 141, 239, 0.25); outline-offset: 0; }
+.col-filter button { position: absolute; right: 4px; display: inline-flex; padding: 3px; background: none; border: 0; color: var(--muted); cursor: pointer; }

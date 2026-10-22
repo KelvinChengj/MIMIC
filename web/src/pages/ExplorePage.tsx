@@ -2,23 +2,29 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Dot } from '../components/Lamp';
 import { BackButton, PageHeader } from '../components/PageParts';
-import { ChevronDown, CloseIcon, SearchIcon, StarIcon } from '../components/Icons';
+import { CloseIcon, SearchIcon, StarIcon } from '../components/Icons';
 import { PAGES } from '../catalog/catalog';
 import { usePageStatus } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
+import type { PageDef, Status } from '../types';
 
-const SORTS = [
-  { id: 'favorites', label: '收藏數' },
-  { id: 'clicks', label: '點擊數' },
-  { id: 'updated', label: '最近更新' },
-] as const;
-type SortId = (typeof SORTS)[number]['id'];
+/** 可排序的欄位（點欄名切換：第一次依該欄預設方向，再點反向） */
+const COLUMNS = {
+  status: { label: 'Status', dir: 'desc' },
+  page: { label: 'MIMIC Page', dir: 'asc' },
+  author: { label: 'Author', dir: 'asc' },
+  system: { label: 'System', dir: 'asc' },
+  site: { label: 'Site', dir: 'asc' },
+  clicks: { label: 'Clicks', dir: 'desc' },
+  favorites: { label: 'Favorites', dir: 'desc' },
+  updated: { label: 'Last Updated', dir: 'desc' },
+} as const;
+type SortId = keyof typeof COLUMNS;
+type Dir = 'asc' | 'desc';
+const SEVERITY: Record<Status, number> = { red: 3, yellow: 2, gray: 1, green: 0 };
 
 const EXPLORE_PAGES = PAGES.filter((p) => p.explore);
-const unique = (xs: string[]) => [...new Set(xs)];
-const SYSTEM_OPTIONS = unique(EXPLORE_PAGES.flatMap((p) => p.systemTags ?? []));
-const SITE_OPTIONS = unique(EXPLORE_PAGES.map((p) => p.siteLabel ?? ''));
-const AUTHOR_OPTIONS = unique(EXPLORE_PAGES.map((p) => p.author?.name ?? ''));
+const has = (text: string | undefined, f: string) => !f || (text ?? '').toLowerCase().includes(f.trim().toLowerCase());
 
 function Highlight({ text, q }: { text: string; q: string }): ReactNode {
   const term = q.trim();
@@ -36,21 +42,28 @@ function Highlight({ text, q }: { text: string; q: string }): ReactNode {
   return out;
 }
 
-function FilterSelect({ label, value, options, onChange }: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-}) {
-  const current = options.find((o) => o.value === value)?.label ?? options[0].label;
+/** 表頭的欄名：點了排序，顯示目前方向 */
+function SortHeader({ id, sort, dir, onSort, className = '' }: { id: SortId; sort: SortId; dir: Dir; onSort: (id: SortId) => void; className?: string }) {
+  const on = sort === id;
   return (
-    <label className={`select-chip ${value ? 'is-set' : ''}`}>
-      <span>{label}：{current}</span>
-      <ChevronDown size={14} />
-      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </label>
+    <th className={`sortable ${className} ${on ? 'is-sorted' : ''}`} aria-sort={on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" onClick={() => onSort(id)} title={`依 ${COLUMNS[id].label} 排序`}>
+        {COLUMNS[id].label}
+        <span className="sort-ind" aria-hidden="true">{on ? (dir === 'asc' ? '▲' : '▼') : '↕'}</span>
+      </button>
+    </th>
+  );
+}
+
+/** 表頭下方的篩選列（像 AG Grid 的 floating filter）：輸入就篩選，包含即符合 */
+function FilterCell({ label, value, onChange, className = '' }: { label: string; value: string; onChange: (v: string) => void; className?: string }) {
+  return (
+    <th className={className}>
+      <span className="col-filter">
+        <input type="text" value={value} placeholder="篩選…" aria-label={`篩選 ${label}`} onChange={(e) => onChange(e.target.value)} />
+        {value && <button type="button" aria-label={`清除 ${label} 篩選`} onClick={() => onChange('')}><CloseIcon size={12} /></button>}
+      </span>
+    </th>
   );
 }
 
@@ -62,10 +75,13 @@ export function ExplorePage() {
 
   // 篩選條件都放在網址 query，所以搜尋結果也能分享
   const urlQ = params.get('q') ?? '';
+  const fPage = params.get('page') ?? '';
   const system = params.get('system') ?? '';
   const site = params.get('site') ?? '';
   const author = params.get('author') ?? '';
-  const sort = (SORTS.find((s) => s.id === params.get('sort'))?.id ?? 'favorites') as SortId;
+  const status = (params.get('status') ?? '') as Status | '';
+  const sort: SortId = (params.get('sort') as SortId) in COLUMNS ? (params.get('sort') as SortId) : 'favorites';
+  const dir: Dir = params.get('dir') === 'asc' || params.get('dir') === 'desc' ? (params.get('dir') as Dir) : COLUMNS[sort].dir;
   const [text, setText] = useState(urlQ);
 
   const setParam = (key: string, value: string) =>
@@ -75,25 +91,49 @@ export function ExplorePage() {
       return next;
     }, { replace: true });
 
+  // 點欄名：換欄位時用該欄的預設方向，同一欄再點則反向
+  const onSort = (id: SortId) =>
+    setParams((p) => {
+      const next = new URLSearchParams(p);
+      const nextDir: Dir = id === sort ? (dir === 'asc' ? 'desc' : 'asc') : COLUMNS[id].dir;
+      if (id === 'favorites' && nextDir === 'desc') { next.delete('sort'); next.delete('dir'); }
+      else { next.set('sort', id); next.set('dir', nextDir); }
+      return next;
+    }, { replace: true });
+
   const results = useMemo(() => {
     const q = urlQ.trim().toLowerCase();
+    const key = (p: PageDef): string | number => {
+      switch (sort) {
+        case 'status': return SEVERITY[pageStatus(p)];
+        case 'page': return p.title;
+        case 'author': return p.author?.name ?? '';
+        case 'system': return p.systemTags?.join(' ') ?? '';
+        case 'site': return p.siteLabel ?? '';
+        case 'clicks': return p.clicks ?? 0;
+        case 'updated': return p.updatedRank ?? 0;
+        default: return (p.favorites ?? 0) + (isFavorite(p.slug) ? 1 : 0);
+      }
+    };
     return EXPLORE_PAGES
-      .filter((p) => !system || p.systemTags?.includes(system))
-      .filter((p) => !site || p.siteLabel === site)
-      .filter((p) => !author || p.author?.name === author)
+      .filter((p) => has(`${p.title} mimic/p/${p.slug}`, fPage))
+      .filter((p) => has(p.systemTags?.join(' '), system))
+      .filter((p) => has(p.siteLabel, site))
+      .filter((p) => has(`${p.author?.name} ${p.author?.dept}`, author))
+      .filter((p) => !status || pageStatus(p) === status)
       .filter((p) => {
         if (!q) return true;
         const hay = [p.title, `mimic/p/${p.slug}`, p.author?.name, p.author?.dept, p.systemTags?.join(' '), p.siteLabel].join(' ').toLowerCase();
         return hay.includes(q);
       })
       .sort((a, b) => {
-        if (sort === 'clicks') return (b.clicks ?? 0) - (a.clicks ?? 0);
-        if (sort === 'updated') return (b.updatedRank ?? 0) - (a.updatedRank ?? 0);
-        return (b.favorites ?? 0) - (a.favorites ?? 0);
+        const ka = key(a), kb = key(b);
+        const c = typeof ka === 'number' && typeof kb === 'number' ? ka - kb : String(ka).localeCompare(String(kb), 'zh-Hant');
+        return dir === 'asc' ? c : -c;
       });
-  }, [urlQ, system, site, author, sort]);
+  }, [urlQ, fPage, system, site, author, status, sort, dir, pageStatus, isFavorite]);
 
-  const anyFilter = !!(urlQ || system || site || author);
+  const anyFilter = !!(urlQ || fPage || system || site || author || status);
   const submit = () => setParam('q', text.trim());
 
   return (
@@ -122,14 +162,6 @@ export function ExplorePage() {
       </form>
 
       <div className="filters">
-        <FilterSelect label="系統" value={system} onChange={(v) => setParam('system', v)}
-          options={[{ value: '', label: '全部' }, ...SYSTEM_OPTIONS.map((v) => ({ value: v, label: v }))]} />
-        <FilterSelect label="廠區" value={site} onChange={(v) => setParam('site', v)}
-          options={[{ value: '', label: '全部' }, ...SITE_OPTIONS.map((v) => ({ value: v, label: v }))]} />
-        <FilterSelect label="著作人" value={author} onChange={(v) => setParam('author', v)}
-          options={[{ value: '', label: '全部' }, ...AUTHOR_OPTIONS.map((v) => ({ value: v, label: v }))]} />
-        <FilterSelect label="排序" value={sort} onChange={(v) => setParam('sort', v === 'favorites' ? '' : v)}
-          options={SORTS.map((s) => ({ value: s.id, label: s.label }))} />
         {anyFilter && (
           <button className="link-btn" onClick={() => { setText(''); setParams({}, { replace: true }); }}>清除全部條件</button>
         )}
@@ -140,15 +172,33 @@ export function ExplorePage() {
         <table className="explore-table">
           <thead>
             <tr>
-              <th>Status</th>
-              <th>MIMIC Page</th>
-              <th>Author</th>
-              <th>System</th>
-              <th>Site</th>
-              <th className="num">Clicks</th>
-              <th className="num">Favorites</th>
-              <th>Last Updated</th>
+              <SortHeader id="status" sort={sort} dir={dir} onSort={onSort} />
+              <SortHeader id="page" sort={sort} dir={dir} onSort={onSort} />
+              <SortHeader id="author" sort={sort} dir={dir} onSort={onSort} />
+              <SortHeader id="system" sort={sort} dir={dir} onSort={onSort} />
+              <SortHeader id="site" sort={sort} dir={dir} onSort={onSort} />
+              <SortHeader id="clicks" sort={sort} dir={dir} onSort={onSort} className="num" />
+              <SortHeader id="favorites" sort={sort} dir={dir} onSort={onSort} className="num" />
+              <SortHeader id="updated" sort={sort} dir={dir} onSort={onSort} />
               <th className="center">Favorite</th>
+            </tr>
+            <tr className="filter-row">
+              <th>
+                <span className="col-filter">
+                  <select aria-label="篩選 Status" value={status} onChange={(e) => setParam('status', e.target.value)}>
+                    <option value="">全部</option>
+                    <option value="red">紅</option>
+                    <option value="yellow">黃</option>
+                    <option value="green">綠</option>
+                    <option value="gray">灰</option>
+                  </select>
+                </span>
+              </th>
+              <FilterCell label="MIMIC Page" value={fPage} onChange={(v) => setParam('page', v)} />
+              <FilterCell label="Author" value={author} onChange={(v) => setParam('author', v)} />
+              <FilterCell label="System" value={system} onChange={(v) => setParam('system', v)} />
+              <FilterCell label="Site" value={site} onChange={(v) => setParam('site', v)} />
+              <th /><th /><th /><th />
             </tr>
           </thead>
           <tbody>

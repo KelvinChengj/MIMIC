@@ -49,7 +49,7 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 | `/p/:slug/edit` | 編輯模式：積木畫布，左側積木庫依層級只列出可用的積木；內建頁面可「還原預設版面」 |
 | `/vtags` | Virtual Tag 清單（唯讀）：目前值、燈號、組成的 InSQL tag 數、被幾個頁面引用。目前先從側欄隱藏，只能直接輸入網址進入 |
 | `/vtags/:site/:name` | 單一 virtual tag 的下鑽 |
-| `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |
+| `/explore?q=UPW&page=…&system=…&site=…&author=…&status=…&sort=…&dir=…` | 搜尋他人頁面；表格採 AG Grid 形式：點欄名排序（再點反向），表頭下方的篩選列輸入即篩選；☆ 加入 / 移除 Favorites（條件都放在網址，可分享） |
 
 舊網址：`/p/:slug/:site/:system` 轉到對應燈號的下鑽頁；`/systems`、`/scenarios` 轉到 `/vtags`。
 
