@@ -123,4 +123,6 @@ src/components/         Layout、Sidebar、Topbar、Lamp、LayerChip 等
 
 > 這是前端設計稿：沒有後端與登入，自建頁面與版面只存在瀏覽器 localStorage。
 >
+> **回到原始展示畫面**：頂欄「燈號說明（?）」→「重置展示資料…」→「確定重置」；或在網址後加 `?reset=1`（單檔版為 `#/p/overview?reset=1`）。會清除瀏覽器裡所有 `mimic.*` 設定（自建頁面、改過的版面、側欄分類與收合狀態）。
+>
 > 已移除以精簡設計：「門檻設定」頁（可從 commit `a303852` 的 `src/pages/EditPage.tsx` 找回）、燈號積木的自訂算式 / 條件精靈 / 模擬值（可從 commit `a5e732e` 的 `src/lib/expr.ts`、`src/blocks/lamp/` 找回）、情境管理（可從 commit `21ebae7` 的 `src/pages/SystemsPage.tsx`、`src/pages/SystemEditPage.tsx` 找回）。

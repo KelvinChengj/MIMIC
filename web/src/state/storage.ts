@@ -32,3 +32,27 @@ export function usePersistentState<T>(key: string, initial: T) {
   );
   return [value, set] as const;
 }
+
+/** 清除這個網站存在瀏覽器的所有設定（自建頁面、改過的版面、側欄分類與狀態），回到原始展示畫面 */
+export function resetDemoStorage() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k?.startsWith('mimic.')) keys.push(k);
+    }
+    keys.forEach((k) => window.localStorage.removeItem(k));
+  } catch {
+    /* localStorage 不可用時本來就沒有存任何東西 */
+  }
+}
+
+/** 重置後重新載入首頁（Hash 路由用 #/，一般路由用 /） */
+export function reloadHome() {
+  if (import.meta.env.VITE_HASH) {
+    window.location.hash = '#/p/overview';
+    window.location.reload();
+  } else {
+    window.location.assign('/p/overview');
+  }
+}

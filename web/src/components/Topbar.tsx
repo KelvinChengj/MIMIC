@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFdm } from '../state/FdmContext';
+import { reloadHome, resetDemoStorage } from '../state/storage';
 import { ChatIcon, HelpIcon, RefreshIcon } from './Icons';
 import { useSpin } from './PageParts';
 import { Legend } from './Lamp';
@@ -14,6 +15,7 @@ export function Topbar() {
   const { snapshot, refresh, stats } = useFdm();
   const [spin, startSpin] = useSpin();
   const [help, setHelp] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,6 +50,17 @@ export function Topbar() {
             <h2>燈號說明</h2>
             <Legend />
             <p className="popover__note">值班燈號 = virtual tag 的燈號代碼（2 紅、1 黃、0 綠）；指揮官燈號取值班情境最差。開啟網頁或按重新整理時才向 FDM 取值。</p>
+            <div className="popover__reset">
+              {confirmReset ? (
+                <>
+                  <p>會清除自建頁面、改過的版面與側欄設定，回到原始展示畫面。</p>
+                  <button className="btn btn--sm" onClick={() => setConfirmReset(false)}>取消</button>
+                  <button className="btn btn--sm btn--danger" onClick={() => { resetDemoStorage(); reloadHome(); }}>確定重置</button>
+                </>
+              ) : (
+                <button className="link-btn" onClick={() => setConfirmReset(true)}>重置展示資料…</button>
+              )}
+            </div>
           </div>
         )}
       </div>
