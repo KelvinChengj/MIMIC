@@ -6,7 +6,7 @@ import { pageBySlug } from '../catalog/catalog';
 import { buildTagIndex, lampVTag, vtagKey } from '../lib/blocks';
 import { layerOf } from '../lib/pages';
 import { worstOf } from '../lib/status';
-import type { Layer, PageDef, Status, UserPage } from '../types';
+import type { Layer, Status, UserPage } from '../types';
 import { useFdm } from './FdmContext';
 import { useUserPages } from './UserPagesContext';
 
@@ -28,15 +28,6 @@ export function useBlockEnv(): BlockEnv {
 export function pageStatusOf(page: UserPage, env: BlockEnv): Status {
   const contributions = page.blocks.flatMap((b) => getBlockDef(b.type)?.status?.(b, env) ?? []);
   return worstOf(contributions.length ? contributions : ['gray']);
-}
-
-/** 頁面（Explore、側欄）上的整體燈號 */
-export function usePageStatus() {
-  const env = useBlockEnv();
-  return useMemo(() => (page: PageDef): Status => {
-    const layout = env.getPage(page.slug);
-    return layout ? pageStatusOf(layout, env) : 'gray';
-  }, [env]);
 }
 
 export interface ResolvedPage {

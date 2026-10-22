@@ -222,7 +222,6 @@ code { font-family: var(--mono); font-size: 0.92em; }
 .explore-table tbody tr:last-child td { border-bottom: 0; }
 .explore-table .num { font-family: var(--mono); }
 .explore-table .center { text-align: center; }
-.explore-table td:first-child { text-align: center; }
 .page-link { display: block; font-weight: 700; font-size: 15px; }
 .page-link:hover { text-decoration: underline; }
 .page-path { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }

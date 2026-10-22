@@ -1,16 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Dot } from '../components/Lamp';
 import { BackButton, PageHeader } from '../components/PageParts';
 import { CloseIcon, SearchIcon, StarIcon } from '../components/Icons';
 import { PAGES } from '../catalog/catalog';
-import { usePageStatus } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
-import type { PageDef, Status } from '../types';
+import type { PageDef } from '../types';
 
 /** 可排序的欄位（點欄名切換：第一次依該欄預設方向，再點反向） */
 const COLUMNS = {
-  status: { label: 'Status', dir: 'desc' },
   page: { label: 'MIMIC Page', dir: 'asc' },
   author: { label: 'Author', dir: 'asc' },
   system: { label: 'System', dir: 'asc' },
@@ -21,7 +18,6 @@ const COLUMNS = {
 } as const;
 type SortId = keyof typeof COLUMNS;
 type Dir = 'asc' | 'desc';
-const SEVERITY: Record<Status, number> = { red: 3, yellow: 2, gray: 1, green: 0 };
 
 const EXPLORE_PAGES = PAGES.filter((p) => p.explore);
 const has = (text: string | undefined, f: string) => !f || (text ?? '').toLowerCase().includes(f.trim().toLowerCase());
@@ -70,7 +66,6 @@ function FilterCell({ label, value, onChange, className = '' }: { label: string;
 export function ExplorePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const pageStatus = usePageStatus();
   const { isFavorite, toggleFavorite } = useFavorites();
 
   // 篩選條件都放在網址 query，所以搜尋結果也能分享
@@ -79,7 +74,6 @@ export function ExplorePage() {
   const system = params.get('system') ?? '';
   const site = params.get('site') ?? '';
   const author = params.get('author') ?? '';
-  const status = (params.get('status') ?? '') as Status | '';
   const sort: SortId = (params.get('sort') as SortId) in COLUMNS ? (params.get('sort') as SortId) : 'favorites';
   const dir: Dir = params.get('dir') === 'asc' || params.get('dir') === 'desc' ? (params.get('dir') as Dir) : COLUMNS[sort].dir;
   const [text, setText] = useState(urlQ);
@@ -105,7 +99,6 @@ export function ExplorePage() {
     const q = urlQ.trim().toLowerCase();
     const key = (p: PageDef): string | number => {
       switch (sort) {
-        case 'status': return SEVERITY[pageStatus(p)];
         case 'page': return p.title;
         case 'author': return p.author?.name ?? '';
         case 'system': return p.systemTags?.join(' ') ?? '';
@@ -120,7 +113,6 @@ export function ExplorePage() {
       .filter((p) => has(p.systemTags?.join(' '), system))
       .filter((p) => has(p.siteLabel, site))
       .filter((p) => has(`${p.author?.name} ${p.author?.dept}`, author))
-      .filter((p) => !status || pageStatus(p) === status)
       .filter((p) => {
         if (!q) return true;
         const hay = [p.title, `mimic/p/${p.slug}`, p.author?.name, p.author?.dept, p.systemTags?.join(' '), p.siteLabel].join(' ').toLowerCase();
@@ -131,9 +123,9 @@ export function ExplorePage() {
         const c = typeof ka === 'number' && typeof kb === 'number' ? ka - kb : String(ka).localeCompare(String(kb), 'zh-Hant');
         return dir === 'asc' ? c : -c;
       });
-  }, [urlQ, fPage, system, site, author, status, sort, dir, pageStatus, isFavorite]);
+  }, [urlQ, fPage, system, site, author, sort, dir, isFavorite]);
 
-  const anyFilter = !!(urlQ || fPage || system || site || author || status);
+  const anyFilter = !!(urlQ || fPage || system || site || author);
   const submit = () => setParam('q', text.trim());
 
   return (
@@ -172,7 +164,6 @@ export function ExplorePage() {
         <table className="explore-table">
           <thead>
             <tr>
-              <SortHeader id="status" sort={sort} dir={dir} onSort={onSort} />
               <SortHeader id="page" sort={sort} dir={dir} onSort={onSort} />
               <SortHeader id="author" sort={sort} dir={dir} onSort={onSort} />
               <SortHeader id="system" sort={sort} dir={dir} onSort={onSort} />
@@ -183,17 +174,6 @@ export function ExplorePage() {
               <th className="center">Favorite</th>
             </tr>
             <tr className="filter-row">
-              <th>
-                <span className="col-filter">
-                  <select aria-label="篩選 Status" value={status} onChange={(e) => setParam('status', e.target.value)}>
-                    <option value="">全部</option>
-                    <option value="red">紅</option>
-                    <option value="yellow">黃</option>
-                    <option value="green">綠</option>
-                    <option value="gray">灰</option>
-                  </select>
-                </span>
-              </th>
               <FilterCell label="MIMIC Page" value={fPage} onChange={(v) => setParam('page', v)} />
               <FilterCell label="Author" value={author} onChange={(v) => setParam('author', v)} />
               <FilterCell label="System" value={system} onChange={(v) => setParam('system', v)} />
@@ -206,7 +186,6 @@ export function ExplorePage() {
               const fav = isFavorite(p.slug);
               return (
                 <tr key={p.slug} onClick={() => navigate(`/p/${p.slug}`)}>
-                  <td><Dot status={pageStatus(p)} /></td>
                   <td>
                     <Link to={`/p/${p.slug}`} className="page-link" onClick={(e) => e.stopPropagation()}>
                       <Highlight text={p.title} q={urlQ} />
@@ -240,7 +219,7 @@ export function ExplorePage() {
             })}
             {results.length === 0 && (
               <tr>
-                <td colSpan={9} className="explore-table__empty">
+                <td colSpan={8} className="explore-table__empty">
                   找不到符合的頁面。試試較短的關鍵字，或
                   <button className="link-btn" onClick={() => { setText(''); setParams({}, { replace: true }); }}>清除全部條件</button>。
                 </td>
