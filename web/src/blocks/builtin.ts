@@ -39,7 +39,7 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
       out.push(
         mk(`cell-${site.id}-${sys.id}`, 'lamp', {
           vtag: { site: site.id, name: vtagName(site.id, sys.id) },
-        } satisfies LampProps, { title: `${site.label} ${sys.name}`, size: 'M', x: X0 + c * (TILE.w + GAP_X), y }),
+        } satisfies LampProps, { title: `${site.name} ${sys.short}`, size: 'M', x: X0 + c * (TILE.w + GAP_X), y }),
       ),
     );
   });
@@ -68,7 +68,8 @@ export function defaultCommandLayout(): PageBlock[] {
   };
   DUTY_HOME.forEach((slug) => {
     const at = spot(slug);
-    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, at));
+    // 積木名稱預設為值班情境頁的名稱（大、中尺寸顯示的就是它，可在編輯器修改）
+    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, { ...at, title: PAGES.find((p) => p.slug === slug)?.title ?? '' }));
     // 小尺寸沒有文字：在燈號右邊放名稱
     if (at.size === 'S') textAt(out, `lbl-${slug}`, PAGES.find((p) => p.slug === slug)?.title ?? slug, 'S', at.x + 60, at.y + 22);
   });

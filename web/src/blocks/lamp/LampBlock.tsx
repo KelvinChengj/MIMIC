@@ -20,5 +20,6 @@ export function LampRender({ block, host }: RenderProps<LampProps>) {
   const label = `${name}：${r.text}`;
   if (block.size === 'S') return <LampDot status={r.status} label={label} to={to} size={DOT_LAMP} />;
   const scale = SCALE[block.size] as 1 | 2;
-  return <StatusTile fill scale={scale} status={r.status} to={to} label={label} title={scale === 1 ? undefined : name} text={r.text} />;
+  // 中尺寸：燈號下方放積木名稱（狀態看燈號顏色與滑鼠提示）；大尺寸：名稱在上、狀態在下
+  return <StatusTile fill scale={scale} status={r.status} to={to} label={label} title={scale === 1 ? undefined : name} text={scale === 1 ? name : r.text} />;
 }
