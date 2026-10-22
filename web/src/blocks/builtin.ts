@@ -1,6 +1,6 @@
 import { SITES, SYSTEMS, PAGES } from '../catalog/catalog';
 import { vtagName } from '../lib/fdm';
-import type { DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
+import type { BlockSize, DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -49,19 +49,31 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
 /** 內建的值班情境頁：範圍是所有廠區 × 單一系統的頁面（Power、UPW…），也是全廠總覽指揮的對象 */
 export const DUTY_HOME = PAGES.filter((p) => !p.explore && p.scope?.systems.length === 1 && p.scope.sites.length === SITES.length).map((p) => p.slug);
 
-const DUTY = { w: 192, h: 176, gap: 20, perRow: 3 };
+/** 指揮官頁的版位：最需要關注的一個用大尺寸，接著兩個中尺寸，其餘小尺寸（展示大中小三種燈號） */
+const SPOT = { x0: 24, top: 140, gap: 20, L: 384, M: 192, S: 96, mH: 176 };
+const COMMAND_PRIORITY = ['upw', 'power', 'hvac', 'exhaust', 'gas', 'chemical'];
 
-/** 戰情指揮官頁的預設版面：每個值班情境一顆中尺寸燈號，點了進入該值班情境 */
+function commandSpot(rank: number): { size: BlockSize; x: number; y: number } {
+  const right = SPOT.x0 + SPOT.L + SPOT.gap + 4;
+  if (rank === 0) return { size: 'L', x: SPOT.x0, y: SPOT.top };
+  if (rank <= 2) return { size: 'M', x: right + (rank - 1) * (SPOT.M + SPOT.gap), y: SPOT.top };
+  const i = rank - 3;
+  return { size: 'S', x: right + (i % 4) * (SPOT.S + SPOT.gap), y: SPOT.top + SPOT.mH + 52 + Math.floor(i / 4) * (88 + SPOT.gap) };
+}
+
+/** 戰情指揮官頁的預設版面：每個值班情境一顆燈號（大、中、小三種尺寸），點了進入該值班情境 */
 export function defaultCommandLayout(): PageBlock[] {
   const out: PageBlock[] = [];
   textAt(out, 'title', '戰情指揮 · 值班情境總覽', 'M', 24, 40);
   textAt(out, 'hint', '點燈號進入值班情境', 'S', 24, 76);
-  DUTY_HOME.forEach((slug, i) =>
-    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, {
-      size: 'M',
-      x: 24 + (i % DUTY.perRow) * (DUTY.w + DUTY.gap),
-      y: 110 + Math.floor(i / DUTY.perRow) * (DUTY.h + DUTY.gap),
-    })),
+  const right = SPOT.x0 + SPOT.L + SPOT.gap + 4;
+  textAt(out, 'cap-l', '大尺寸', 'S', SPOT.x0, 118);
+  textAt(out, 'cap-m', '中尺寸', 'S', right, 118);
+  textAt(out, 'cap-s', '小尺寸', 'S', right, SPOT.top + SPOT.mH + 30);
+  const rank = (slug: string) => (COMMAND_PRIORITY.includes(slug) ? COMMAND_PRIORITY.indexOf(slug) : COMMAND_PRIORITY.length + DUTY_HOME.indexOf(slug));
+  const order = [...DUTY_HOME].sort((a, b) => rank(a) - rank(b));
+  DUTY_HOME.forEach((slug) =>
+    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, commandSpot(order.indexOf(slug)))),
   );
   return out;
 }

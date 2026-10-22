@@ -61,6 +61,10 @@ describe('戰情指揮官頁 = 值班情境燈號 + 文字積木', () => {
     expect(duties.map((b) => (b.props as DutyProps).page)).toEqual(DUTY_HOME);
     expect(overlaps(cmd)).toEqual([]);
   });
+  it('展示大、中、小三種尺寸：超純水大、電力與空調中、其餘小', () => {
+    const size = (slug: string) => duties.find((b) => (b.props as DutyProps).page === slug)!.size;
+    expect(DUTY_HOME.map(size)).toEqual(['M', 'L', 'M', 'S', 'S', 'S']);
+  });
   it('指揮官燈號取值班情境頁最差燈號', () => {
     const e = env();
     const duty = getBlockDef('duty')!;
