@@ -47,7 +47,7 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 | `/p/:slug` | 積木畫布頁（值班情境或戰情指揮官，標題旁標示層級）。沒有功能的示意頁（CDA、PCW、我的MIMIC、異常追蹤、設備維護、節能專案）已移除，舊的側欄設定讀取時自動清掉 |
 | `/p/:slug/b/:blockId` | 下鑽頁：值班燈號的摘要卡 + 由 virtual tag 讀回的 **InSQL tag 清單**（Tag name / Description / Value / OOC / OOS），可切「僅顯示異常 / 全部 Tag」，Refresh Values 重新取值。指揮官燈號的這個網址會轉到該值班情境頁 |
 | `/p/:slug/edit` | 編輯模式：積木畫布，左側積木庫依層級只列出可用的積木；內建頁面可「還原預設版面」 |
-| `/vtags` | Virtual Tag 清單（唯讀）：目前值、燈號、組成的 InSQL tag 數、被幾個頁面引用 |
+| `/vtags` | Virtual Tag 清單（唯讀）：目前值、燈號、組成的 InSQL tag 數、被幾個頁面引用。目前先從側欄隱藏，只能直接輸入網址進入 |
 | `/vtags/:site/:name` | 單一 virtual tag 的下鑽 |
 | `/explore?q=UPW&system=…&site=…&author=…&sort=…` | 搜尋他人頁面、篩選、排序；☆ 加入 / 移除 Favorites（搜尋條件放在網址，可分享） |
 

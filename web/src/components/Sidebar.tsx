@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useResolvePage } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
-import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LayersIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
+import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
 
 type Drag = { kind: 'page'; slug: string } | { kind: 'group'; id: string };
 type Drop =
@@ -67,7 +67,6 @@ export function Sidebar() {
         <button className="icon-btn" onClick={toggleSidebar} aria-label="展開側邊欄" title="展開側邊欄"><MenuIcon /></button>
         <Link to="/explore" className={`icon-btn ${pathname === '/explore' ? 'is-active' : ''}`} aria-label="Explore MIMIC" title="Explore MIMIC"><SearchIcon /></Link>
         <button className="icon-btn" onClick={() => openNewPage()} aria-label="新增頁面" title="新增頁面"><PlusIcon /></button>
-        <Link to="/vtags" className={`icon-btn ${pathname.startsWith('/vtags') ? 'is-active' : ''}`} aria-label="Virtual Tag 清單" title="Virtual Tag 清單"><LayersIcon /></Link>
         <nav className="rail-list" aria-label="Favorites">
           {groups.map((g) => (
             <div className="rail-group" key={g.id}>
@@ -137,7 +136,7 @@ export function Sidebar() {
         <SearchIcon size={16} /><span>Explore MIMIC</span><Chev />
       </Link>
       <button className="newpage-btn" onClick={() => openNewPage()}><PlusIcon size={15} /> 新增頁面</button>
-      <Link to="/vtags" className={`side-link ${pathname.startsWith('/vtags') ? 'is-active' : ''}`}><LayersIcon size={16} /> Virtual Tag 清單</Link>
+      {/* Virtual Tag 清單（/vtags）先從側欄隱藏；頁面與網址仍保留 */}
 
       <div className="fav-head">
         <button className="fav-head__title" onClick={() => setFavOpen((o) => !o)} aria-expanded={favOpen}>
