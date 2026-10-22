@@ -4,6 +4,7 @@ import { pageBySlug } from '../catalog/catalog';
 import { nextFreePosition, snap } from '../blocks/layout';
 import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
 import { newId } from '../lib/blocks';
+import { migrateSizes } from '../lib/pages';
 import type { Layer, PageBlock, UserPage } from '../types';
 import { usePersistentState } from './storage';
 
@@ -37,7 +38,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
     () =>
       stored
         .filter(fresh)
-        .map((p) => ({ ...p, blocks: p.blocks.map(normalizeBlock) })),
+        .map((p) => migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) })),
     [stored],
   );
 
@@ -45,7 +46,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
     // 內建頁面（燈號牆）第一次被修改時，才把預設版面存進來
     const patchPage = (slug: string, fn: (p: UserPage) => UserPage) =>
       setPages((prev) => {
-        const list = prev.filter(fresh);
+        const list = prev.filter(fresh).map((p) => migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) }));
         if (list.some((p) => p.slug === slug)) return list.map((p) => (p.slug === slug ? fn(p) : p));
         const seed = builtinLayoutPage(slug);
         return seed ? [...list, fn(seed)] : list;
@@ -56,7 +57,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
       getPage: find,
       createPage: (title, layer) => {
         const slug = newId('u');
-        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer }]);
+        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer, sizes: 2 }]);
         return slug;
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),

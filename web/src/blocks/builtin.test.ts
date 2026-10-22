@@ -35,6 +35,7 @@ describe('值班情境頁 = 燈號（virtual tag）+ 文字積木', () => {
   it('只用「燈號」與「文字」兩種積木', () => expect(new Set(wall.map((b) => b.type))).toEqual(new Set(['lamp', 'text'])));
   it('每顆燈號綁該廠區 × 系統的 virtual tag', () => {
     expect(lamps).toHaveLength(6);
+    expect(lamps.every((b) => b.size === 'M')).toBe(true);
     expect((lamps.find((b) => b.id === 'cell-f18p7-upw')!.props as LampProps).vtag).toEqual({ site: 'f18p7', name: 'F18P7.UPW.LAMP' });
   });
   it('積木互不重疊、id 穩定', () => {

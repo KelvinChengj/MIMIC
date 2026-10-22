@@ -56,7 +56,8 @@ describe('積木庫 registry', () => {
     const [s, m, l] = (['S', 'M', 'L'] as const).map((size) => footprintOf({ ...lamp, size }));
     expect([m.w / s.w, l.w / s.w]).toEqual([2, 4]);
     expect([m.h / s.h, l.h / s.h]).toEqual([2, 4]);
-    expect(SCALE).toEqual({ S: 1, M: 2, L: 4 });
+    expect(SCALE).toEqual({ S: 0.5, M: 1, L: 2 });
+    expect([s.w, s.h, l.w, l.h]).toEqual([48, 44, 192, 176]);
   });
   it('各積木種類的三種尺寸都有合理的佔用大小', () => {
     for (const d of listBlockDefs().filter((x) => !x.type.startsWith('test-'))) {

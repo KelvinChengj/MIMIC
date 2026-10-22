@@ -38,3 +38,14 @@ export function collectVTagKeys(pages: UserPage[]): string[] {
     }
   return [...keys];
 }
+
+/** 燈號尺寸改定義前存的頁面：原本的小 → 中、中 → 大、大（已移除）→ 大；文字積木不變 */
+const SIZE_V2: Record<string, PageBlock['size']> = { S: 'M', M: 'L', L: 'L' };
+export function migrateSizes(p: UserPage): UserPage {
+  if (p.sizes === 2) return p;
+  return {
+    ...p,
+    sizes: 2,
+    blocks: p.blocks.map((b) => (b.type === 'lamp' || b.type === 'duty' ? { ...b, size: SIZE_V2[b.size ?? 'M'] ?? 'M' } : b)),
+  };
+}

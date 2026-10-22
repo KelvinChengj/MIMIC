@@ -632,3 +632,8 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .fav-group__head { position: relative; }
 .fav-group__head:hover, .fav-group__head:focus-within { z-index: 5; }
 .fav-group__head .row-actions { position: absolute; right: 10px; top: 0; bottom: 0; padding-left: 16px; background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--surface) 16px); }
+
+/* 小尺寸燈號：只有一顆燈，沒有外框與文字 */
+.lampdot { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; }
+a.lampdot:hover .lamp { filter: brightness(1.08); }
+a.lampdot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

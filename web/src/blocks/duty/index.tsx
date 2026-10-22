@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StatusTile } from '../../components/StatusTile';
+import { LampDot, StatusTile } from '../../components/StatusTile';
 import { dutySummary, dutyText } from '../../lib/pages';
 import { STATUS_META } from '../../lib/status';
 import { useDutyPages, useTagIndex } from '../../state/derived';
@@ -7,7 +7,7 @@ import { useUserPages } from '../../state/UserPagesContext';
 import type { DutyProps } from '../../types';
 import { DutyIcon } from '../icons';
 import { LAMP_BASE } from '../lamp';
-import { SCALE } from '../layout';
+import { DOT_LAMP, SCALE } from '../layout';
 import type { BlockDefinition, EditorProps, RenderProps } from '../types';
 
 function useDuty(slug: string) {
@@ -16,27 +16,34 @@ function useDuty(slug: string) {
   return useMemo(() => (page ? { page, sum: dutySummary(page, index) } : null), [page, index]);
 }
 
-/** 小尺寸放得下的名稱：「Exhaust 廢氣系統」取英文代號，其餘取前 6 個字 */
+/** 中尺寸放得下的名稱：「Exhaust 廢氣系統」取英文代號，其餘取前 6 個字 */
 const shortName = (title: string) => (/^[A-Za-z]+\s/.test(title) ? title.split(/\s/)[0] : [...title].slice(0, 6).join(''));
 
 /** 戰情指揮官的燈號：代表一個值班情境頁，點了進入該頁（不下鑽） */
 function DutyRender({ block, host }: RenderProps<DutyProps>) {
   const d = useDuty(block.props.page);
-  const scale = SCALE[block.size];
   const name = block.title || d?.page.title || '值班情境';
-  if (!d) return <StatusTile fill scale={scale} status="gray" label={`${name}：找不到值班情境頁`} title={scale === 1 ? undefined : name} text="找不到頁面" />;
+  if (!d) {
+    const label = `${name}：找不到值班情境頁`;
+    if (block.size === 'S') return <LampDot status="gray" label={label} size={DOT_LAMP} />;
+    return <StatusTile fill scale={SCALE[block.size] as 1 | 2} status="gray" label={label} title={block.size === 'M' ? undefined : name} text="找不到頁面" />;
+  }
   const text = dutyText(d.sum);
+  const label = `${name}：${STATUS_META[d.sum.status].badge}，${text}。進入值班情境`;
+  const to = host.pageTo?.(d.page.slug);
+  // 小尺寸只有一顆燈：名稱與數量放在滑鼠提示
+  if (block.size === 'S') return <LampDot status={d.sum.status} label={label} to={to} size={DOT_LAMP} />;
+  const scale = SCALE[block.size] as 1 | 2;
   return (
     <StatusTile
       fill
       scale={scale}
       status={d.sum.status}
-      to={host.pageTo?.(d.page.slug)}
+      to={to}
       title={scale === 1 ? undefined : name}
-      value={scale === 4 ? text : undefined}
-      // 小尺寸沒有標題列：燈號下方改放情境名稱（數量在滑鼠提示裡），指揮官才分得出是哪一個
-      text={scale === 4 ? STATUS_META[d.sum.status].badge : scale === 1 ? shortName(name) : text}
-      label={`${name}：${STATUS_META[d.sum.status].badge}，${text}。進入值班情境`}
+      // 中尺寸沒有標題列：燈號下方改放情境名稱（數量在滑鼠提示裡），指揮官才分得出是哪一個
+      text={scale === 1 ? shortName(name) : text}
+      label={label}
     />
   );
 }

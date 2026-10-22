@@ -163,4 +163,6 @@ export interface UserPage {
   builtin?: boolean;
   /** 頁面層級；舊資料沒有這個欄位時視為值班情境 */
   layer?: Layer;
+  /** 燈號尺寸定義的版本：2 = 小只有燈、中為原本的小、大為原本的中。舊資料讀取時換算 */
+  sizes?: 2;
 }

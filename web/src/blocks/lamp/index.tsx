@@ -6,7 +6,7 @@ import type { BlockDefinition } from '../types';
 import { LampEditor } from './LampEditor';
 import { LampRender } from './LampBlock';
 
-/** 基準（小）96 × 88，中、大依 SCALE 放大 2 倍、4 倍 */
+/** 基準（中）96 × 88；小、大依 SCALE 為 0.5 倍、2 倍 */
 export const LAMP_BASE = { w: 96, h: 88 };
 
 export const lampBlock: BlockDefinition<LampProps> = {

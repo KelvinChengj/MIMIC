@@ -7,8 +7,8 @@ export const LAMP_PX: Record<BlockSize, number> = { S: 26, M: 34, L: 56 };
 interface Props {
   status: Status;
   size?: BlockSize;
-  /** 1 : 2 : 4 的整數倍率（燈號積木用）；有給的話優先於 size */
-  scale?: 1 | 2 | 4;
+  /** 燈號積木的倍率（中 = 1、大 = 2）；有給的話優先於 size */
+  scale?: 1 | 2;
   /** 小標題（小尺寸通常省略） */
   title?: string;
   /** 大字數值（大尺寸用） */
@@ -39,5 +39,15 @@ export function StatusTile({ status, size = 'M', scale, title, value, text, labe
     <Link to={to} className={cls} aria-label={label} title={label}>{body}</Link>
   ) : (
     <div className={cls} role="img" aria-label={label} title={label}>{body}</div>
+  );
+}
+
+/** 最精簡的燈號（小尺寸）：只有一顆燈，沒有外框與文字；名稱與狀態放在滑鼠提示與螢幕閱讀器 */
+export function LampDot({ status, label, to, size }: { status: Status; label: string; to?: string; size: number }) {
+  const cls = `lampdot lampdot--${status}`;
+  return to ? (
+    <Link to={to} className={cls} aria-label={label} title={label}><Lamp status={status} size={size} /></Link>
+  ) : (
+    <div className={cls} role="img" aria-label={label} title={label}><Lamp status={status} size={size} /></div>
   );
 }

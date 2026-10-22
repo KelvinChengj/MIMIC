@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectVTagKeys, dutySummary, dutyText, layerOf } from './pages';
+import { collectVTagKeys, dutySummary, dutyText, layerOf, migrateSizes } from './pages';
 import type { TagIndex } from './blocks';
 import type { PageBlock, UserPage } from '../types';
 
@@ -49,5 +49,24 @@ describe('layerOf', () => {
   it('沒有標記的舊頁面視為值班情境', () => {
     expect(layerOf(page([]))).toBe('duty');
     expect(layerOf(page([], 'command'))).toBe('command');
+  });
+});
+
+describe('migrateSizes：燈號尺寸改定義前存的頁面', () => {
+  const old = page([
+    { ...lamp('a', {}), size: 'S' },
+    { ...lamp('b', {}), size: 'M' },
+    { ...lamp('c', {}), size: 'L' },
+    { ...lamp('d', { page: 'upw' }), type: 'duty', size: 'S' },
+    { ...lamp('t', { text: '標題' }), type: 'text', size: 'S' },
+  ]);
+  it('原本的小 → 中、中 → 大、大（已移除）→ 大；文字積木不變', () => {
+    const m = migrateSizes(old);
+    expect(m.blocks.map((b) => b.size)).toEqual(['M', 'L', 'L', 'M', 'S']);
+    expect(m.sizes).toBe(2);
+  });
+  it('已換算過的頁面不再換算', () => {
+    const m = migrateSizes(old);
+    expect(migrateSizes(m)).toBe(m);
   });
 });

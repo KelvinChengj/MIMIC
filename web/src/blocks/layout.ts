@@ -5,11 +5,16 @@ export const SIZE_LABEL: Record<BlockSize, string> = { S: '小', M: '中', L: '�
 export const SIZES: BlockSize[] = ['S', 'M', 'L'];
 
 /**
- * 小 : 中 : 大 = 1 : 2 : 4（長與寬都按這個倍率放大）。
- * 燈號積木的外框、燈號圖示、文字都由這個倍率推出；
+ * 燈號類積木的尺寸倍率（以中尺寸 96 × 88 為 1）：小 : 中 : 大 = 1 : 2 : 4（長與寬）。
+ * - 小：只有一顆燈，沒有外框、沒有文字（最精簡）
+ * - 中：燈號 + 一行文字
+ * - 大：名稱 + 燈號 + 一行文字
  * 要改比例只要改這裡。
  */
-export const SCALE: Record<BlockSize, 1 | 2 | 4> = { S: 1, M: 2, L: 4 };
+export const SCALE: Record<BlockSize, 0.5 | 1 | 2> = { S: 0.5, M: 1, L: 2 };
+
+/** 小尺寸燈號（只有燈）的圖示大小 */
+export const DOT_LAMP = 36;
 
 export interface Footprint {
   w: number;
