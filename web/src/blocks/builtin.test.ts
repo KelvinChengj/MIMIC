@@ -59,12 +59,19 @@ describe('戰情指揮官頁 = 值班情境燈號 + 文字積木', () => {
   it('全廠總覽是戰情指揮官層，每個內建值班情境一顆燈', () => {
     expect(builtinLayoutPage('overview')).toMatchObject({ layer: 'command', builtin: true, title: 'F18A 全廠總覽' });
     expect(DUTY_HOME).toEqual(['power', 'upw', 'hvac', 'exhaust', 'gas', 'chemical']);
-    expect(duties.map((b) => (b.props as DutyProps).page)).toEqual(DUTY_HOME);
+    expect(duties.map((b) => (b.props as DutyProps).page)).toEqual([...DUTY_HOME, 'f18p1-utility', 'f18p3-upw-particle', 'upw-drill']);
     expect(overlaps(cmd)).toEqual([]);
   });
   it('展示大、中、小三種尺寸：超純水大、電力與空調中、其餘小', () => {
     const size = (slug: string) => duties.find((b) => (b.props as DutyProps).page === slug)!.size;
     expect(DUTY_HOME.map(size)).toEqual(['M', 'L', 'M', 'S', 'S', 'S']);
+  });
+  it('綠燈範例：大、中、小各一顆，目前全部正常', () => {
+    const e = env();
+    const duty = getBlockDef('duty')!;
+    const greens = duties.filter((b) => ['f18p1-utility', 'f18p3-upw-particle', 'upw-drill'].includes((b.props as DutyProps).page));
+    expect(greens.map((b) => b.size)).toEqual(['L', 'M', 'S']);
+    for (const b of greens) expect(duty.status!(b as PageBlock<DutyProps>, e)).toBe('green');
   });
   it('指揮官燈號取值班情境頁最差燈號', () => {
     const e = env();

@@ -1,6 +1,6 @@
 import { SITES, SYSTEMS, PAGES } from '../catalog/catalog';
 import { vtagName } from '../lib/fdm';
-import type { DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
+import type { BlockSize, DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -49,34 +49,54 @@ export function defaultWallLayout(page: PageDef): PageBlock[] {
 /** 內建的值班情境頁：範圍是所有廠區 × 單一系統的頁面（Power、UPW…），也是全廠總覽指揮的對象 */
 export const DUTY_HOME = PAGES.filter((p) => !p.explore && p.scope?.systems.length === 1 && p.scope.sites.length === SITES.length).map((p) => p.slug);
 
-/** 戰情指揮官頁的預設版面：每個值班情境一顆燈號，展示大、中、小三種尺寸；點了進入該值班情境 */
+/** 綠燈範例：目前全部正常的值班情境頁，分別用大、中、小尺寸展示 */
+const GREEN_EXAMPLES: { slug: string; size: BlockSize }[] = [
+  { slug: 'f18p1-utility', size: 'L' },
+  { slug: 'f18p3-upw-particle', size: 'M' },
+  { slug: 'upw-drill', size: 'S' },
+];
+const COMMAND_PRIORITY = ['upw', 'power', 'hvac', 'exhaust', 'gas', 'chemical'];
+
+/**
+ * 戰情指揮官頁的預設版面：依尺寸分三欄（大、中、小），每欄先放需要關注的值班情境，再放一個綠燈範例。
+ * 點燈號進入該值班情境。
+ */
 export function defaultCommandLayout(): PageBlock[] {
   const out: PageBlock[] = [];
   textAt(out, 'title', '戰情指揮 · 值班情境總覽', 'M', 24, 40);
   textAt(out, 'hint', '點燈號進入值班情境', 'S', 24, 76);
-  // 大：最需要關注的一個；中：接著兩個；小：其餘（只有燈，旁邊用文字標名稱）
-  const L = { x: 24, y: 140 }, M = { x: 240, y: 140 }, S = { x: 240, y: 290, gap: 54 };
-  textAt(out, 'cap-l', '大尺寸', 'S', L.x, 118);
-  textAt(out, 'cap-m', '中尺寸', 'S', M.x, 118);
-  textAt(out, 'cap-s', '小尺寸', 'S', S.x, S.y - 22);
-  const spot = (slug: string): Pick<PageBlock, 'size' | 'x' | 'y'> => {
-    const rank = COMMAND_PRIORITY.indexOf(slug);
-    if (rank === 0) return { size: 'L', ...L };
-    if (rank === 1 || rank === 2) return { size: 'M', x: M.x + (rank - 1) * 116, y: M.y };
-    const i = rank < 0 ? COMMAND_PRIORITY.length + DUTY_HOME.indexOf(slug) - 3 : rank - 3;
-    return { size: 'S', x: S.x, y: S.y + i * S.gap };
-  };
-  DUTY_HOME.forEach((slug) => {
-    const at = spot(slug);
-    // 積木名稱預設為值班情境頁的名稱（大、中尺寸顯示的就是它，可在編輯器修改）
-    out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, { ...at, title: PAGES.find((p) => p.slug === slug)?.title ?? '' }));
-    // 小尺寸沒有文字：在燈號右邊放名稱
-    if (at.size === 'S') textAt(out, `lbl-${slug}`, PAGES.find((p) => p.slug === slug)?.title ?? slug, 'S', at.x + 60, at.y + 22);
+  const COL = { L: 24, M: 240, S: 476 }, TOP = 140, GAP = 20, ROW_S = 54;
+  textAt(out, 'cap-l', '大尺寸', 'S', COL.L, 118);
+  textAt(out, 'cap-m', '中尺寸', 'S', COL.M, 118);
+  textAt(out, 'cap-s', '小尺寸', 'S', COL.S, 118);
+  const title = (slug: string) => PAGES.find((p) => p.slug === slug)?.title ?? slug;
+  const slots: { slug: string; size: BlockSize }[] = [
+    ...[...DUTY_HOME]
+      .sort((a, b) => COMMAND_PRIORITY.indexOf(a) - COMMAND_PRIORITY.indexOf(b))
+      .map((slug, rank): { slug: string; size: BlockSize } => ({ slug, size: rank === 0 ? 'L' : rank <= 2 ? 'M' : 'S' })),
+    ...GREEN_EXAMPLES,
+  ];
+  const used = { L: 0, M: 0, S: 0 };
+  const dutyFirst = (slug: string) => (DUTY_HOME.includes(slug) ? 0 : 1);
+  // 輸出順序：內建值班情境依 DUTY_HOME 順序在前，綠燈範例在後（id 穩定，不影響版面）
+  const placed = slots.map((slot) => {
+    const i = used[slot.size]++;
+    const at =
+      slot.size === 'L' ? { x: COL.L, y: TOP + i * (176 + GAP) }
+      : slot.size === 'M' ? { x: COL.M + (i % 2) * (96 + GAP), y: TOP + Math.floor(i / 2) * (88 + GAP) }
+      : { x: COL.S, y: TOP + i * ROW_S };
+    return { ...slot, ...at };
   });
+  placed
+    .sort((a, b) => dutyFirst(a.slug) - dutyFirst(b.slug) || (DUTY_HOME.indexOf(a.slug) - DUTY_HOME.indexOf(b.slug)))
+    .forEach(({ slug, size, x, y }) => {
+      // 積木名稱預設為值班情境頁的名稱（大、中尺寸顯示的就是它，可在編輯器修改）
+      out.push(mk(`duty-${slug}`, 'duty', { page: slug } satisfies DutyProps, { size, x, y, title: title(slug) }));
+      // 小尺寸沒有文字：在燈號右邊放名稱
+      if (size === 'S') textAt(out, `lbl-${slug}`, title(slug), 'S', x + 60, y + 22);
+    });
   return out;
 }
-
-const COMMAND_PRIORITY = ['upw', 'power', 'hvac', 'exhaust', 'gas', 'chemical'];
 
 export const builtinLayer = (page: PageDef): Layer => page.layer ?? 'duty';
 
