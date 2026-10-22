@@ -21,7 +21,7 @@ blocks/
 - 值班情境（各系統頁、Explore 的頁面）：`defaultWallLayout`，每個廠區 × 系統一顆綁 virtual tag（`vtag: { site, name }`）的小燈號，加上欄名、列名、標題的文字積木。
 - 戰情指揮官（全廠總覽）：`defaultCommandLayout`，每個內建值班情境一顆值班情境燈號（`page: slug`），展示大、中、小三種尺寸。
 
-使用者第一次修改時才把版面存進 `mimic.userpages.v1`（`builtin: true`、`layer`），之後與自建頁面走同一套編輯與儲存；「還原預設版面」就是把存下的版面丟掉。內建頁面的層級改變時，層級不符的舊版面不再使用。
+使用者第一次修改時才把版面存進 `mimic.userpages.v1`（`builtin: true`、`layer`），之後與自建頁面走同一套編輯與儲存；「重置展示資料」會把存下的版面全部丟掉。內建頁面的層級改變時，層級不符的舊版面不再使用。
 
 ## 資料模型
 

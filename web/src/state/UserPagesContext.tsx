@@ -14,8 +14,6 @@ interface UserPagesValue {
   createPage: (title: string, layer: Layer) => string;
   renamePage: (slug: string, title: string) => void;
   deletePage: (slug: string) => void;
-  /** 內建頁面：丟掉使用者改過的版面，回到預設 */
-  resetLayout: (slug: string) => void;
   addBlock: (slug: string, type: string) => string;
   updateBlock: (slug: string, id: string, patch: Partial<PageBlock>) => void;
   moveBlock: (slug: string, id: string, x: number, y: number) => void;
@@ -62,7 +60,6 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),
       deletePage: (slug) => setPages((prev) => prev.filter((p) => p.slug !== slug || p.builtin)),
-      resetLayout: (slug) => setPages((prev) => prev.filter((p) => !(p.slug === slug && p.builtin))),
       addBlock: (slug, type) => {
         const block = createBlock(type, find(slug)?.blocks ?? []);
         patchPage(slug, (p) => ({ ...p, blocks: [...p.blocks, block] }));

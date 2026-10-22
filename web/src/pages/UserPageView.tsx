@@ -16,10 +16,10 @@ import { LAYER_META, LayerChip } from '../components/LayerChip';
 
 /**
  * 積木畫布頁面：檢視 /p/:slug；編輯 /p/:slug/edit（左側積木庫 + 畫布）。
- * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除，但可以還原預設版面。
+ * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除（要回到預設請用「重置展示資料」）。
  */
 export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) {
-  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, resetLayout } = useUserPages();
+  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage } = useUserPages();
   const { removeSlug } = useFavorites();
   const { showToast } = useUi();
   const navigate = useNavigate();
@@ -37,13 +37,6 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
     removeSlug(page.slug);
     showToast(`已刪除頁面「${page.title}」`);
     navigate('/');
-  };
-  const reset = () => {
-    if (!confirm) return setConfirm(true);
-    resetLayout(page.slug);
-    setConfirm(false);
-    setOpenId(null);
-    showToast('已還原預設版面');
   };
 
   const canvas = (
@@ -74,11 +67,8 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
     />
   );
 
-  const dangerBtn = page.builtin ? (
-    <button className={`btn ${confirm ? 'btn--danger' : ''}`} onClick={reset} onBlur={() => setConfirm(false)}>
-      {confirm ? '確定還原？你的修改會消失' : '還原預設版面'}
-    </button>
-  ) : (
+  // 內建頁面不能刪除；自建頁面才有「刪除頁面」
+  const dangerBtn = page.builtin ? null : (
     <button className={`btn ${confirm ? 'btn--danger' : ''}`} onClick={remove} onBlur={() => setConfirm(false)}>
       {confirm ? '確定刪除整個頁面？' : '刪除頁面'}
     </button>
