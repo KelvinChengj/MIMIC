@@ -627,3 +627,8 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .col-filter select { padding-right: 4px; }
 .col-filter input:focus, .col-filter select:focus { border-color: var(--focus); outline: 2px solid rgba(91, 141, 239, 0.25); outline-offset: 0; }
 .col-filter button { position: absolute; right: 4px; display: inline-flex; padding: 3px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+
+/* 分類標題的操作按鈕平常不佔寬度（名稱完整顯示），滑鼠移上去或聚焦時才浮在右側 */
+.fav-group__head { position: relative; }
+.fav-group__head:hover, .fav-group__head:focus-within { z-index: 5; }
+.fav-group__head .row-actions { position: absolute; right: 10px; top: 0; bottom: 0; padding-left: 16px; background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--surface) 16px); }
