@@ -10,6 +10,7 @@ import { BackButton, FullscreenButton, PageHeader } from '../components/PagePart
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
 import { useUserPages } from '../state/UserPagesContext';
+import { PHASE_OPTIONS, SYSTEM_OPTIONS } from '../catalog/catalog';
 import { layerOf } from '../lib/pages';
 import type { UserPage } from '../types';
 import { LAYER_META, LayerChip } from '../components/LayerChip';
@@ -19,7 +20,7 @@ import { LAYER_META, LayerChip } from '../components/LayerChip';
  * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除（要回到預設請用「重置展示資料」）。
  */
 export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) {
-  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage } = useUserPages();
+  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, setPageMeta } = useUserPages();
   const { removeSlug } = useFavorites();
   const { showToast } = useUi();
   const navigate = useNavigate();
@@ -91,6 +92,18 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
                 />
               )}
               <LayerChip layer={layer} />
+              {!page.builtin && (
+                <span className="page-meta-edit">
+                  <select aria-label="System" value={page.system ?? ''} onChange={(e) => setPageMeta(page.slug, { system: e.target.value })}>
+                    <option value="" disabled>System</option>
+                    {SYSTEM_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select aria-label="Phase" value={page.phase ?? ''} onChange={(e) => setPageMeta(page.slug, { phase: e.target.value })}>
+                    <option value="" disabled>Phase</option>
+                    {PHASE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </span>
+              )}
               <span className="mode-pill">編輯模式</span>
             </>
           }
@@ -105,7 +118,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
       ) : (
         <PageHeader
           title={<>{page.title} <LayerChip layer={layer} /></>}
-          sub={meta.hint}
+          sub={<>{(page.system || page.phase) && <span className="page-meta">{[page.system, page.phase].filter(Boolean).join(' · ')}</span>}{meta.hint}</>}
           actions={
             <>
               <BackButton />

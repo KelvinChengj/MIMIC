@@ -165,4 +165,9 @@ export interface UserPage {
   layer?: Layer;
   /** 燈號尺寸定義的版本：2 = 小只有燈、中為原本的小、大為原本的中。舊資料讀取時換算 */
   sizes?: 2;
+  /** 頁面分類：System（系統，例如「超純水」）與 Phase（廠區，例如「F18P2」），和 Explore 的欄位一致 */
+  system?: string;
+  phase?: string;
 }
+
+export type PageMeta = Pick<UserPage, 'system' | 'phase'>;

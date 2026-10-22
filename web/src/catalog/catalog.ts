@@ -236,3 +236,7 @@ export const PAGES: PageDef[] = [
 ];
 
 export const pageBySlug = (slug: string) => PAGES.find((p) => p.slug === slug);
+
+/** 新增頁面時可選的 System 與 Phase（用詞與 Explore 的 System、Site 欄一致） */
+export const SYSTEM_OPTIONS = [...SYSTEMS.map((s) => s.name), '全系統'];
+export const PHASE_OPTIONS = [...SITES.map((s) => s.name), 'F18A'];

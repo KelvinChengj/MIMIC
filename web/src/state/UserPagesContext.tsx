@@ -5,13 +5,14 @@ import { nextFreePosition, snap } from '../blocks/layout';
 import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
 import { newId } from '../lib/blocks';
 import { migrateSizes } from '../lib/pages';
-import type { Layer, PageBlock, UserPage } from '../types';
+import type { Layer, PageBlock, PageMeta, UserPage } from '../types';
 import { usePersistentState } from './storage';
 
 interface UserPagesValue {
   pages: UserPage[];
   getPage: (slug: string) => UserPage | undefined;
-  createPage: (title: string, layer: Layer) => string;
+  createPage: (title: string, layer: Layer, meta?: PageMeta) => string;
+  setPageMeta: (slug: string, meta: PageMeta) => void;
   renamePage: (slug: string, title: string) => void;
   deletePage: (slug: string) => void;
   addBlock: (slug: string, type: string) => string;
@@ -53,12 +54,13 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
     return {
       pages,
       getPage: find,
-      createPage: (title, layer) => {
+      createPage: (title, layer, meta = {}) => {
         const slug = newId('u');
-        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer, sizes: 2 }]);
+        setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer, sizes: 2, ...meta }]);
         return slug;
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),
+      setPageMeta: (slug, meta) => patchPage(slug, (p) => ({ ...p, ...meta })),
       deletePage: (slug) => setPages((prev) => prev.filter((p) => p.slug !== slug || p.builtin)),
       addBlock: (slug, type) => {
         const block = createBlock(type, find(slug)?.blocks ?? []);
