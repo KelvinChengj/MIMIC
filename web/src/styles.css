@@ -32,6 +32,8 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(
 h1, h2, h3, p { margin: 0; }
 a { color: inherit; text-decoration: none; }
 button, input, select { font: inherit; color: inherit; }
+/* 輸入框一律明確給白底深字：外層（例如檢視器的深色模式）改了預設配色時也看得清楚 */
+input, select, textarea { background-color: var(--surface); color: var(--text); }
 button { cursor: pointer; }
 code { font-family: var(--mono); font-size: 0.92em; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
@@ -261,7 +263,7 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .newpage-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); margin: 0 16px 6px; padding: 7px 12px; background: none; border: 1px dashed var(--line-strong); border-radius: 8px; color: #4b5560; font-size: 13px; }
 .newpage-btn:hover { background: #f4f3f1; border-color: #aab4c0; color: var(--text); }
 .inline-form { display: flex; gap: 6px; margin: 4px 16px 8px 18px; }
-.inline-form input { flex: 1; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 8px; }
+.inline-form input { flex: 1; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--primary); border-radius: 8px; background: var(--surface); color: var(--text); }
 .btn--sm { height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; }
 .icon-btn--xs { width: 24px; height: 24px; border-radius: 6px; color: #4b5560; }
 .icon-btn--xs:disabled { opacity: 0.3; cursor: default; }
@@ -276,7 +278,7 @@ mark { background: #fbeaa0; color: inherit; padding: 0 2px; border-radius: 3px; 
 .fav-group__head { display: flex; align-items: center; gap: 4px; padding: 6px 10px 2px 12px; min-height: 36px; }
 .fav-group__toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 6px 4px; font-weight: 600; font-size: 14px; text-align: left; }
 .fav-group__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rename-input { flex: 1; min-width: 0; height: 30px; padding: 0 8px; border: 1px solid var(--primary); border-radius: 6px; font-weight: 600; }
+.rename-input { flex: 1; min-width: 0; height: 30px; padding: 0 8px; border: 1px solid var(--primary); border-radius: 6px; font-weight: 600; background: var(--surface); color: var(--text); }
 .grip--drag { cursor: grab; }
 .fav-group ul { list-style: none; margin: 0; padding: 0; }
 .fav-group li { position: relative; display: flex; align-items: center; padding-left: 12px; }
