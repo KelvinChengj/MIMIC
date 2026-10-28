@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useResolvePage } from '../state/derived';
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
-import { ChevronDown, ChevronUp, DotsIcon, GripIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
+import { ChevronDown, ChevronRight, ChevronUp, DotsIcon, GripIcon, LogoMark, MenuIcon, PlusIcon, SearchIcon } from './Icons';
 
 type Drag = { kind: 'page'; slug: string } | { kind: 'group'; id: string };
 type Drop =
@@ -195,8 +195,9 @@ export function Sidebar() {
                     />
                   ) : (
                     <button className="fav-group__toggle" onClick={() => setClosed((c) => ({ ...c, [g.id]: open }))} aria-expanded={open}>
+                      {/* 摺疊箭頭放在名稱左側（樹狀圖慣例），右側浮出的操作按鈕不會蓋住它 */}
+                      <span className="fav-group__chev" aria-hidden="true">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
                       <span className="fav-group__name">{g.name}</span>
-                      {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
                   )}
 
