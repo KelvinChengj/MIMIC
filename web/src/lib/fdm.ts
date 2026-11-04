@@ -26,6 +26,8 @@ const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
       'UPW-PRE-04.TOC': null,
     },
     power: { 'PWR-TR1.LOAD': 84, 'PWR-UPS-A.LOAD': 82 },
+    // 高壓單線圖範例：台電二回線電壓偏低（黃），聯絡斷路器閉合改由 MTR-1 供兩段匯流排（黃）；SS-3 變壓器過溫（紅）
+    hv: { 'HV-TPCB.V161': 151.5, 'HV-TIE.TIE': 1, 'HV-MTR1.LOAD': 78, 'HV-SS3.TMP': 97 },
     // 無塵室地圖範例：MAU 03 送風溫度偏高 → 它供氣的 Bay C 溫濕度超規、Bay G 偏高；Bay H 感測器離線
     mau: { 'MAU-03.TMP': 23.9 },
     cr: {

@@ -198,13 +198,122 @@ function waterSvg(): string {
   return out.join('');
 }
 
-const BUILTIN: Record<string, () => string> = { [CLEANROOM.id]: cleanroomSvg, [WATER.id]: waterSvg };
+/**
+ * 台電入口到高壓迴路的單線圖（由上而下）：
+ * 台電 161 kV 兩回線 → 161 kV GIS 受電站 → 主變壓器 MTR-1／MTR-2 → 22.8 kV Bus A／Bus B（聯絡斷路器常開）
+ * → 高壓迴路一／二（中間常開點，開環運轉）→ 次變電站 SS-1～SS-4；緊急發電機併 Bus B。
+ */
+export const POWER = {
+  id: 'f18p2-hv-single-line',
+  name: 'F18P2 台電受電至高壓迴路單線圖（示意圖）',
+  width: 1200,
+  height: 720,
+  /** 有燈號的設備：方框（燈號放框內右側）或點位（燈號左上角座標） */
+  boxes: {
+    tpca: { x: 250, y: 96, w: 200, h: 60, title: '台電 一回線', sub: '161 kV · 60 Hz' },
+    tpcb: { x: 750, y: 96, w: 200, h: 60, title: '台電 二回線', sub: '161 kV · 60 Hz' },
+    gis: { x: 200, y: 190, w: 800, h: 60, title: '161 kV GIS 受電站', sub: 'SF₆ 氣壓 · 局部放電' },
+    mtr1: { x: 250, y: 290, w: 200, h: 80, title: '主變壓器 MTR-1', sub: '161/22.8 kV · 60 MVA' },
+    mtr2: { x: 750, y: 290, w: 200, h: 80, title: '主變壓器 MTR-2', sub: '161/22.8 kV · 60 MVA' },
+    gen: { x: 1040, y: 280, w: 140, h: 70, title: '緊急發電機', sub: 'GEN · 2 MW' },
+    ss1: { x: 215, y: 590, w: 170, h: 70, title: '次變電站 SS-1', sub: 'Fab 黃光' },
+    ss2: { x: 405, y: 590, w: 170, h: 70, title: '次變電站 SS-2', sub: 'Fab 蝕刻' },
+    ss3: { x: 625, y: 590, w: 170, h: 70, title: '次變電站 SS-3', sub: 'CUB 冰水主機' },
+    ss4: { x: 815, y: 590, w: 170, h: 70, title: '次變電站 SS-4', sub: 'UPW／廢水' },
+  },
+  points: {
+    busa: { x: 130, y: 370, title: '22.8 kV Bus A' },
+    busb: { x: 960, y: 370, title: '22.8 kV Bus B' },
+    tie: { x: 576, y: 434, title: '聯絡斷路器' },
+    loop1: { x: 212, y: 458, title: '高壓迴路一' },
+    loop2: { x: 940, y: 458, title: '高壓迴路二' },
+  },
+};
+export type PowerNodeId = keyof typeof POWER.boxes | keyof typeof POWER.points;
+
+export function powerLampAt(id: PowerNodeId): { x: number; y: number; title: string } {
+  if (id in POWER.boxes) {
+    const b = POWER.boxes[id as keyof typeof POWER.boxes];
+    return { x: b.x + b.w - 52, y: b.y + Math.round((b.h - 44) / 2), title: b.title };
+  }
+  return POWER.points[id as keyof typeof POWER.points];
+}
+
+function powerSvg(): string {
+  const { width: W, height: H, boxes: B } = POWER;
+  const C = { hv: '#6b4fa0', mv: '#3f7cc0', loop: '#2b7a78', gen: '#7b8794' };
+  const out: string[] = [];
+  const wire = (pts: [number, number][], color: string, w = 3) =>
+    out.push(`<polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linejoin="round"/>`);
+  /** 斷路器：線上的小方框；open＝常開（空心、虛線框） */
+  const cb = (x: number, y: number, color: string, open = false) =>
+    out.push(`<rect x="${x - 9}" y="${y - 9}" width="18" height="18" rx="2" fill="${open ? '#ffffff' : color}" stroke="${color}" stroke-width="2"${open ? ' stroke-dasharray="3 2"' : ''}/>`);
+  const text = (x: number, y: number, t: string, size: number, color: string, anchor = 'start', bold = false) =>
+    out.push(`<text x="${x}" y="${y}" font-size="${size}"${bold ? ' font-weight="700"' : ''} fill="${color}" text-anchor="${anchor}" stroke="#f6f7f9" stroke-width="4" paint-order="stroke">${t}</text>`);
+
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ${FONT}>`);
+  out.push(`<rect width="${W}" height="${H}" fill="#f6f7f9"/>`);
+  text(30, 40, 'F18P2 · 台電入口至高壓迴路', 22, '#2b4764', 'start', true);
+  text(30, 64, '示意單線圖 · 161 kV 受電 → 22.8 kV 匯流排 → 高壓迴路（開環）→ 次變電站', 13, '#6b7280');
+  text(600, 132, '台電公司 161 kV 輸電線', 13, C.hv, 'middle', true);
+
+  // 161 kV：台電 → GIS → 主變
+  for (const x of [350, 850]) {
+    wire([[x, 156], [x, 190]], C.hv);
+    wire([[x, 250], [x, 290]], C.hv);
+    cb(x, 270, C.hv);
+  }
+  // 主變 → 22.8 kV 匯流排
+  for (const x of [350, 850]) {
+    wire([[x, 370], [x, 420]], C.mv);
+    cb(x, 396, C.mv);
+  }
+  wire([[120, 420], [585, 420]], C.mv, 7);
+  wire([[615, 420], [1150, 420]], C.mv, 7);
+  cb(600, 420, C.mv, true);
+  text(600, 404, '常開', 11, C.mv, 'middle');
+  text(184, 403, 'Bus A　22.8 kV', 13, C.mv, 'start', true);
+  text(1150, 446, 'Bus B　22.8 kV', 13, C.mv, 'end', true);
+  text(600, 500, '聯絡斷路器（常開）', 12, C.mv, 'middle');
+  // 緊急發電機 → Bus B
+  wire([[1110, 350], [1110, 420]], C.gen);
+  cb(1110, 386, C.gen);
+  // 高壓迴路：Bus A → 迴路一 → SS-1、SS-2；Bus B → 迴路二 → SS-4、SS-3；中間常開點
+  wire([[200, 420], [200, 560], [588, 560]], C.loop, 4);
+  wire([[1000, 420], [1000, 560], [612, 560]], C.loop, 4);
+  cb(200, 440, C.loop);
+  cb(1000, 440, C.loop);
+  out.push(`<line x1="588" y1="550" x2="588" y2="570" stroke="${C.loop}" stroke-width="3"/><line x1="612" y1="550" x2="612" y2="570" stroke="${C.loop}" stroke-width="3"/>`);
+  text(600, 545, '常開點', 11, C.loop, 'middle', true);
+  text(266, 487, '高壓迴路一', 13, C.loop, 'start', true);
+  text(934, 487, '高壓迴路二', 13, C.loop, 'end', true);
+  for (const id of ['ss1', 'ss2', 'ss3', 'ss4'] as const) {
+    const b = B[id];
+    wire([[b.x + b.w / 2, 560], [b.x + b.w / 2, b.y]], C.loop, 3);
+  }
+
+  // 設備方框
+  for (const [id, b] of Object.entries(B)) {
+    const color = id.startsWith('tpc') || id === 'gis' ? C.hv : id.startsWith('mtr') ? C.mv : id === 'gen' ? C.gen : C.loop;
+    out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="8" fill="#ffffff" stroke="${color}" stroke-width="1.8"/>`);
+    const ty = b.y + b.h / 2 - 3;
+    out.push(`<text x="${b.x + 12}" y="${ty}" font-size="15" font-weight="700" fill="#2b4764">${b.title}</text>`);
+    out.push(`<text x="${b.x + 12}" y="${ty + 20}" font-size="12" fill="#6b7280">${b.sub}</text>`);
+  }
+  // 圖例
+  text(30, 704, '線色：紫 161 kV　藍 22.8 kV 匯流排　青 高壓迴路　灰 緊急發電機　■ 斷路器（閉合）　□ 常開', 12, '#6b7280');
+  out.push('</svg>');
+  return out.join('');
+}
+
+const BUILTIN: Record<string, () => string> = { [CLEANROOM.id]: cleanroomSvg, [WATER.id]: waterSvg, [POWER.id]: powerSvg };
 const cache = new Map<string, string>();
 
 /** 內建範本底圖（可在編輯模式的「底圖」區套用）；label 是按鈕上的短名稱 */
 export const BUILTIN_BACKGROUNDS: (PageBackground & { label: string })[] = [
   { src: `builtin:${CLEANROOM.id}`, width: CLEANROOM.width, height: CLEANROOM.height, name: CLEANROOM.name, label: '無塵室示意圖' },
   { src: `builtin:${WATER.id}`, width: WATER.width, height: WATER.height, name: WATER.name, label: '水平衡拓樸圖' },
+  { src: `builtin:${POWER.id}`, width: POWER.width, height: POWER.height, name: POWER.name, label: '高壓單線圖' },
 ];
 
 /** 底圖的實際圖檔網址：builtin:<id> 轉成 SVG data URL，其餘（上傳的 data URL）原樣使用 */

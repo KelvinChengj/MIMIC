@@ -21,6 +21,7 @@ const SEEDS = [
   { id: 'exec', slug: 'stsp' },
   { id: 'exec-cleanroom', slug: 'cleanroom-hvac' },
   { id: 'exec-water', slug: 'water-balance' },
+  { id: 'exec-power', slug: 'hv-supply' },
 ];
 const SEED_KEY = 'mimic.favorites.seeded';
 

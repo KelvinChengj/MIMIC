@@ -1,7 +1,7 @@
 import { SITES, STSP, SYSTEMS, PAGES, stspSlug } from '../catalog/catalog';
 import { tagKey, VTAG_BY_KEY, vtagName } from '../lib/fdm';
 import type { BlockSize, DutyProps, Layer, LampProps, PageBackground, PageBlock, PageDef, UserPage } from '../types';
-import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect, WATER, waterLampAt, type WaterNodeId } from './backgrounds';
+import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect, powerLampAt, WATER, waterLampAt, type PowerNodeId, type WaterNodeId } from './backgrounds';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -176,8 +176,26 @@ export function waterBalanceLayout(page: PageDef): PageBlock[] {
   );
 }
 
+/** 高壓單線圖：每個設備一顆燈號，綁高壓電力子系統的 virtual tag（例如 F18P2.HV.MTR1.LAMP） */
+const POWER_LAMPS: [PowerNodeId, string][] = [
+  ['tpca', 'TPCA'], ['tpcb', 'TPCB'], ['gis', 'GIS'], ['mtr1', 'MTR1'], ['mtr2', 'MTR2'], ['gen', 'GEN'],
+  ['busa', 'BUSA'], ['busb', 'BUSB'], ['tie', 'TIE'], ['loop1', 'LOOP1'], ['loop2', 'LOOP2'],
+  ['ss1', 'SS1'], ['ss2', 'SS2'], ['ss3', 'SS3'], ['ss4', 'SS4'],
+];
+
+export function powerLayout(page: PageDef): PageBlock[] {
+  const site = page.scope!.sites[0];
+  return POWER_LAMPS.map(([id, group]) => {
+    const { x, y, title } = powerLampAt(id);
+    return mk(`node-${id}`, 'lamp', { vtag: { site, name: vtagName(site, 'hv', group) } } satisfies LampProps, { size: 'S', title, x, y });
+  });
+}
+
+const PRESET_BG: Partial<Record<NonNullable<PageDef['preset']>, number>> = { cleanroom: 0, water: 1, power: 2 };
+
 const builtinBackground = (page: PageDef): PageBackground | undefined => {
-  const bg = page.preset === 'cleanroom' ? BUILTIN_BACKGROUNDS[0] : page.preset === 'water' ? BUILTIN_BACKGROUNDS[1] : undefined;
+  const i = page.preset ? PRESET_BG[page.preset] : undefined;
+  const bg = i === undefined ? undefined : BUILTIN_BACKGROUNDS[i];
   if (!bg) return undefined;
   const { label: _label, ...rest } = bg;
   return { ...rest, opacity: 1 };
@@ -202,6 +220,7 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
       : page.preset === 'subsystems' ? subsystemLayout(page)
       : page.preset === 'cleanroom' ? cleanroomLayout(page)
       : page.preset === 'water' ? waterBalanceLayout(page)
+      : page.preset === 'power' ? powerLayout(page)
       : layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
     const background = builtinBackground(page);
     cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer, sizes: 2, ...(background && { background }) };
