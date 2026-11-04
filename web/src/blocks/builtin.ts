@@ -1,7 +1,7 @@
 import { SITES, STSP, SYSTEMS, PAGES, stspSlug } from '../catalog/catalog';
 import { tagKey, VTAG_BY_KEY, vtagName } from '../lib/fdm';
 import type { BlockSize, DutyProps, Layer, LampProps, PageBackground, PageBlock, PageDef, UserPage } from '../types';
-import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect, powerLampAt, WATER, waterLampAt, type PowerNodeId, type WaterNodeId } from './backgrounds';
+import { bayRect, BUILTIN_BACKGROUNDS, builtinBackgroundId, CLEANROOM, MAP_TITLES, mauRect, POWER, powerLampAt, WATER, waterLampAt, type PowerNodeId, type WaterNodeId } from './backgrounds';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -139,6 +139,24 @@ export function subsystemLayout(page: PageDef): PageBlock[] {
   return out;
 }
 
+/** 內建底圖的大標題（文字積木，可在編輯模式點兩下修改） */
+function mapTitle(bgId: string): PageBlock {
+  const t = MAP_TITLES[bgId];
+  return mk('map-title', 'text', { text: t.text }, { size: 'M', x: t.x, y: t.y });
+}
+
+/**
+ * 舊資料：內建底圖的大標題原本畫在圖裡，改成文字積木後補上一次（之後使用者刪掉就不再補）。
+ * 內建頁面存過的版面、以及從地圖頁複製出來的頁面都適用。
+ */
+export function withMapTitle(page: UserPage): UserPage {
+  const bg = page.background;
+  const id = bg && builtinBackgroundId(bg.src);
+  if (!bg || bg.v === 2 || !id) return page;
+  const blocks = MAP_TITLES[id] && !page.blocks.some((b) => b.id === 'map-title') ? [mapTitle(id), ...page.blocks] : page.blocks;
+  return { ...page, blocks, background: { ...bg, v: 2 } };
+}
+
 /**
  * 地圖型值班情境：無塵室平面圖當底圖，每個 Bay 中央一顆小尺寸燈號（綁該 Bay 的溫濕度 virtual tag），
  * 每台 MAU 機組上一顆（綁 MAU 子系統 virtual tag）。燈號座標以底圖像素為準。
@@ -158,7 +176,7 @@ export function cleanroomLayout(page: PageDef): PageBlock[] {
       size: 'S', title: `MAU 0${i + 1}`, x: Math.round(m.x + m.w - DOT.w - 6), y: Math.round(m.y + (m.h - DOT.h) / 2),
     });
   });
-  return [...maus, ...bays];
+  return [mapTitle(CLEANROOM.id), ...maus, ...bays];
 }
 
 /** 水平衡拓樸圖：每個處理單元一顆燈號，純水單元綁超純水子系統、廢水單元綁廢水回收子系統的 virtual tag */
@@ -169,11 +187,11 @@ const WATER_LAMPS: [WaterNodeId, string, string][] = [
 
 export function waterBalanceLayout(page: PageDef): PageBlock[] {
   const site = page.scope!.sites[0];
-  return WATER_LAMPS.map(([id, sys, group]) =>
+  return [mapTitle(WATER.id), ...WATER_LAMPS.map(([id, sys, group]) =>
     mk(`node-${id}`, 'lamp', { vtag: { site, name: vtagName(site, sys, group) } } satisfies LampProps, {
       size: 'S', title: WATER.nodes[id].title, ...waterLampAt(id),
     }),
-  );
+  )];
 }
 
 /** 高壓單線圖：每個設備一顆燈號，綁高壓電力子系統的 virtual tag（例如 F18P2.HV.MTR1.LAMP） */
@@ -185,10 +203,10 @@ const POWER_LAMPS: [PowerNodeId, string][] = [
 
 export function powerLayout(page: PageDef): PageBlock[] {
   const site = page.scope!.sites[0];
-  return POWER_LAMPS.map(([id, group]) => {
+  return [mapTitle(POWER.id), ...POWER_LAMPS.map(([id, group]) => {
     const { x, y, title } = powerLampAt(id);
     return mk(`node-${id}`, 'lamp', { vtag: { site, name: vtagName(site, 'hv', group) } } satisfies LampProps, { size: 'S', title, x, y });
-  });
+  })];
 }
 
 const PRESET_BG: Partial<Record<NonNullable<PageDef['preset']>, number>> = { cleanroom: 0, water: 1, power: 2 };

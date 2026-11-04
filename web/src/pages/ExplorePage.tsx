@@ -4,6 +4,7 @@ import { BackButton, PageHeader } from '../components/PageParts';
 import { CloseIcon, SearchIcon, StarIcon } from '../components/Icons';
 import { PAGES } from '../catalog/catalog';
 import { useFavorites } from '../state/FavoritesContext';
+import { useUserPages } from '../state/UserPagesContext';
 import type { PageDef } from '../types';
 
 /** 可排序的欄位（點欄名切換：第一次依該欄預設方向，再點反向） */
@@ -67,6 +68,10 @@ export function ExplorePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { pages } = useUserPages();
+  // 頁面改過名稱時，以改過的名稱顯示與搜尋
+  const titles = useMemo(() => new Map(pages.map((p) => [p.slug, p.title])), [pages]);
+  const titleOf = (p: PageDef) => titles.get(p.slug) ?? p.title;
 
   // 篩選條件都放在網址 query，所以搜尋結果也能分享
   const urlQ = params.get('q') ?? '';
@@ -99,7 +104,7 @@ export function ExplorePage() {
     const q = urlQ.trim().toLowerCase();
     const key = (p: PageDef): string | number => {
       switch (sort) {
-        case 'page': return p.title;
+        case 'page': return titleOf(p);
         case 'author': return p.author?.name ?? '';
         case 'system': return p.systemTags?.join(' ') ?? '';
         case 'site': return p.siteLabel ?? '';
@@ -109,13 +114,13 @@ export function ExplorePage() {
       }
     };
     return EXPLORE_PAGES
-      .filter((p) => has(`${p.title} mimic/p/${p.slug}`, fPage))
+      .filter((p) => has(`${titleOf(p)} mimic/p/${p.slug}`, fPage))
       .filter((p) => has(p.systemTags?.join(' '), system))
       .filter((p) => has(p.siteLabel, site))
       .filter((p) => has(`${p.author?.name} ${p.author?.dept}`, author))
       .filter((p) => {
         if (!q) return true;
-        const hay = [p.title, `mimic/p/${p.slug}`, p.author?.name, p.author?.dept, p.systemTags?.join(' '), p.siteLabel].join(' ').toLowerCase();
+        const hay = [titleOf(p), `mimic/p/${p.slug}`, p.author?.name, p.author?.dept, p.systemTags?.join(' '), p.siteLabel].join(' ').toLowerCase();
         return hay.includes(q);
       })
       .sort((a, b) => {
@@ -123,7 +128,7 @@ export function ExplorePage() {
         const c = typeof ka === 'number' && typeof kb === 'number' ? ka - kb : String(ka).localeCompare(String(kb), 'zh-Hant');
         return dir === 'asc' ? c : -c;
       });
-  }, [urlQ, fPage, system, site, author, sort, dir, isFavorite]);
+  }, [urlQ, fPage, system, site, author, sort, dir, isFavorite, titles]);
 
   const anyFilter = !!(urlQ || fPage || system || site || author);
   const submit = () => setParam('q', text.trim());
@@ -188,7 +193,7 @@ export function ExplorePage() {
                 <tr key={p.slug} onClick={() => navigate(`/p/${p.slug}`)}>
                   <td>
                     <Link to={`/p/${p.slug}`} className="page-link" onClick={(e) => e.stopPropagation()}>
-                      <Highlight text={p.title} q={urlQ} />
+                      <Highlight text={titleOf(p)} q={urlQ} />
                     </Link>
                     <code className="page-path"><Highlight text={`mimic/p/${p.slug}`} q={urlQ} /></code>
                   </td>
@@ -207,7 +212,7 @@ export function ExplorePage() {
                     <button
                       className={`star ${fav ? 'is-on' : ''}`}
                       aria-pressed={fav}
-                      aria-label={`${fav ? '從 Favorites 移除' : '加入 Favorites'}：${p.title}`}
+                      aria-label={`${fav ? '從 Favorites 移除' : '加入 Favorites'}：${titleOf(p)}`}
                       title={fav ? '點擊移除' : '點擊加入 Favorites'}
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(p.slug); }}
                     >

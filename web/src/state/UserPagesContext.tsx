@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { builtinLayer, builtinLayoutPage } from '../blocks/builtin';
+import { builtinLayer, builtinLayoutPage, withMapTitle } from '../blocks/builtin';
 import { pageBySlug } from '../catalog/catalog';
 import { nextFreePosition, snap } from '../blocks/layout';
 import { createBlock, footprintOf, normalizeBlock } from '../blocks/registry';
@@ -41,7 +41,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
     () =>
       stored
         .filter(fresh)
-        .map((p) => migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) })),
+        .map((p) => withMapTitle(migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) }))),
     [stored],
   );
 
@@ -49,7 +49,7 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
     // 內建頁面（燈號牆）第一次被修改時，才把預設版面存進來
     const patchPage = (slug: string, fn: (p: UserPage) => UserPage) =>
       setPages((prev) => {
-        const list = prev.filter(fresh).map((p) => migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) }));
+        const list = prev.filter(fresh).map((p) => withMapTitle(migrateSizes({ ...p, blocks: p.blocks.map(normalizeBlock) })));
         if (list.some((p) => p.slug === slug)) return list.map((p) => (p.slug === slug ? fn(p) : p));
         const seed = builtinLayoutPage(slug);
         return seed ? [...list, fn(seed)] : list;

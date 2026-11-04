@@ -12,14 +12,14 @@ import { BackButton, FullscreenButton, PageHeader } from '../components/PagePart
 import { useFavorites } from '../state/FavoritesContext';
 import { useUi } from '../state/UiContext';
 import { useUserPages } from '../state/UserPagesContext';
-import { PHASE_OPTIONS, SYSTEM_OPTIONS } from '../catalog/catalog';
+import { pageBySlug, PHASE_OPTIONS, SYSTEM_OPTIONS } from '../catalog/catalog';
 import { layerOf } from '../lib/pages';
 import type { UserPage } from '../types';
 import { LAYER_META, LayerChip } from '../components/LayerChip';
 
 /**
  * 積木畫布頁面：檢視 /p/:slug；編輯 /p/:slug/edit（左側積木庫 + 畫布）。
- * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除（要回到預設請用「重置展示資料」）。
+ * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面可以改名（可恢復預設名稱），但不能刪除。
  */
 export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) {
   const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, setPageMeta, setBackground } = useUserPages();
@@ -32,6 +32,8 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
   const host = useMemo(() => pageHost(page.slug), [page.slug]);
   const layer = layerOf(page);
   const meta = LAYER_META[layer];
+  // 內建頁面也能改名；記住預設名稱，清空或按「恢復預設名稱」時用
+  const defaultTitle = page.builtin ? pageBySlug(page.slug)?.title : undefined;
 
   const open = page.blocks.find((b) => b.id === openId);
   const add = (type: string) => setOpenId(addBlock(page.slug, type));
@@ -85,15 +87,14 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
         <PageHeader
           title={
             <>
-              {page.builtin ? (
-                <span>{page.title}</span>
-              ) : (
-                <input
-                  className="title-input" aria-label="頁面名稱" value={page.title} maxLength={40}
-                  style={{ width: `${Math.max(6, [...page.title].reduce((w, c) => w + (c.charCodeAt(0) > 255 ? 1.05 : 0.62), 1.6))}em` }}
-                  onChange={(e) => renamePage(page.slug, e.target.value)}
-                  onBlur={(e) => !e.target.value.trim() && renamePage(page.slug, '未命名頁面')}
-                />
+              <input
+                className="title-input" aria-label="頁面名稱" value={page.title} maxLength={40}
+                style={{ width: `${Math.max(6, [...page.title].reduce((w, c) => w + (c.charCodeAt(0) > 255 ? 1.05 : 0.62), 1.6))}em` }}
+                onChange={(e) => renamePage(page.slug, e.target.value)}
+                onBlur={(e) => !e.target.value.trim() && renamePage(page.slug, defaultTitle ?? '未命名頁面')}
+              />
+              {defaultTitle && page.title !== defaultTitle && (
+                <button type="button" className="btn btn--xs" onClick={() => renamePage(page.slug, defaultTitle)} title={`恢復為「${defaultTitle}」`}>恢復預設名稱</button>
               )}
               <LayerChip layer={layer} />
               {!page.builtin && (

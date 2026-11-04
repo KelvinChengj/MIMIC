@@ -31,7 +31,6 @@ function cleanroomSvg(): string {
   const out: string[] = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ${FONT}>`);
   out.push(`<rect width="${W}" height="${H}" fill="#f6f7f9"/>`);
-  out.push(`<text x="60" y="40" font-size="22" font-weight="700" fill="#2b4764">F18P2 · 3F 無塵室</text>`);
   out.push(`<text x="60" y="64" font-size="13" fill="#6b7280">示意圖 · Bay A～H · 空調機房 MAU 01～04 · 柱位格線 1～10 / A～F</text>`);
   // 建築外框
   out.push(`<rect x="60" y="100" width="1100" height="600" rx="6" fill="#fbfcfd" stroke="#8d99a6" stroke-width="2"/>`);
@@ -138,7 +137,6 @@ function waterSvg(): string {
     out.push(`<marker id="a-${c.slice(1)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${c}"/></marker>`);
   out.push('</defs>');
   out.push(`<rect width="${W}" height="${H}" fill="#f6f7f9"/>`);
-  out.push(`<text x="30" y="40" font-size="22" font-weight="700" fill="#2b4764">F18P1 · 純水／廢水 水平衡</text>`);
   out.push(`<text x="30" y="64" font-size="13" fill="#6b7280">示意圖 · 流量為設計值（m³/h）· 藍：純水　棕：廢水　綠：回收</text>`);
   // 區域
   out.push(`<rect x="365" y="96" width="750" height="239" rx="10" fill="#eaf1f9" stroke="#c6d6e8"/>`);
@@ -253,7 +251,6 @@ function powerSvg(): string {
 
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ${FONT}>`);
   out.push(`<rect width="${W}" height="${H}" fill="#f6f7f9"/>`);
-  text(30, 40, 'F18P2 · 台電入口至高壓迴路', 22, '#2b4764', 'start', true);
   text(30, 64, '示意單線圖 · 161 kV 受電 → 22.8 kV 匯流排 → 高壓迴路（開環）→ 次變電站', 13, '#6b7280');
   text(600, 132, '台電公司 161 kV 輸電線', 13, C.hv, 'middle', true);
 
@@ -306,14 +303,27 @@ function powerSvg(): string {
   return out.join('');
 }
 
+/**
+ * 內建底圖的大標題：不畫在圖裡，而是放成畫布上的「文字」積木（位置對齊圖上原本的標題區），
+ * 在編輯模式點兩下就能改。副標題仍畫在圖裡。
+ */
+export const MAP_TITLES: Record<string, { text: string; x: number; y: number }> = {
+  [CLEANROOM.id]: { text: 'F18P2 · 3F 無塵室', x: 59, y: 12 },
+  [WATER.id]: { text: 'F18P1 · 純水／廢水 水平衡', x: 29, y: 12 },
+  [POWER.id]: { text: 'F18P2 · 台電入口至高壓迴路', x: 29, y: 12 },
+};
+
+/** 內建底圖的 id（上傳的圖檔沒有） */
+export const builtinBackgroundId = (src: string) => (src.startsWith('builtin:') ? src.slice('builtin:'.length) : undefined);
+
 const BUILTIN: Record<string, () => string> = { [CLEANROOM.id]: cleanroomSvg, [WATER.id]: waterSvg, [POWER.id]: powerSvg };
 const cache = new Map<string, string>();
 
 /** 內建範本底圖（可在編輯模式的「底圖」區套用）；label 是按鈕上的短名稱 */
 export const BUILTIN_BACKGROUNDS: (PageBackground & { label: string })[] = [
-  { src: `builtin:${CLEANROOM.id}`, width: CLEANROOM.width, height: CLEANROOM.height, name: CLEANROOM.name, label: '無塵室示意圖' },
-  { src: `builtin:${WATER.id}`, width: WATER.width, height: WATER.height, name: WATER.name, label: '水平衡拓樸圖' },
-  { src: `builtin:${POWER.id}`, width: POWER.width, height: POWER.height, name: POWER.name, label: '高壓單線圖' },
+  { src: `builtin:${CLEANROOM.id}`, width: CLEANROOM.width, height: CLEANROOM.height, name: CLEANROOM.name, label: '無塵室示意圖', v: 2 },
+  { src: `builtin:${WATER.id}`, width: WATER.width, height: WATER.height, name: WATER.name, label: '水平衡拓樸圖', v: 2 },
+  { src: `builtin:${POWER.id}`, width: POWER.width, height: POWER.height, name: POWER.name, label: '高壓單線圖', v: 2 },
 ];
 
 /** 底圖的實際圖檔網址：builtin:<id> 轉成 SVG data URL，其餘（上傳的 data URL）原樣使用 */

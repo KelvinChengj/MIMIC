@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { PAGES, pageBySlug } from '../catalog/catalog';
 import { fetchLamps, VTAGS } from '../lib/fdm';
 import { buildTagIndex } from '../lib/blocks';
-import { allLayoutPages, builtinLayoutPage, defaultCommandLayout, defaultWallLayout, DUTY_HOME, isWallPage } from './builtin';
+import { allLayoutPages, builtinLayoutPage, defaultCommandLayout, defaultWallLayout, DUTY_HOME, isWallPage, withMapTitle } from './builtin';
 import { pageHost, PREVIEW_HOST } from './host';
 import { registerBuiltinBlocks } from './index';
 import { footprintOf, getBlockDef } from './registry';
@@ -281,5 +281,31 @@ describe('台電入口至高壓迴路供應圖（單線圖型值班情境）', (
     expect(st).toMatchObject({ 'node-tpcb': 'yellow', 'node-tie': 'yellow', 'node-ss3': 'red', 'node-mtr1': 'green' });
     const rest = Object.entries(st).filter(([id]) => !['node-tpcb', 'node-tie', 'node-ss3'].includes(id));
     expect(rest.every(([, s]) => s === 'green'), JSON.stringify(st)).toBe(true);
+  });
+});
+
+describe('地圖頁的大標題是文字積木', () => {
+  it('三張內建底圖的頁面都有可編輯的標題積木', () => {
+    for (const slug of ['cleanroom-hvac', 'water-balance', 'hv-supply']) {
+      const page = builtinLayoutPage(slug)!;
+      const title = page.blocks.find((b) => b.id === 'map-title');
+      expect(title?.type, slug).toBe('text');
+      expect(page.background?.v).toBe(2);
+    }
+  });
+
+  it('舊資料（標題還畫在圖裡）補上一次標題積木；已補過或使用者刪掉後不再補', () => {
+    const page = builtinLayoutPage('cleanroom-hvac')!;
+    const old = { ...page, blocks: page.blocks.filter((b) => b.id !== 'map-title'), background: { ...page.background!, v: undefined } };
+    const migrated = withMapTitle(old);
+    expect(migrated.blocks[0]).toMatchObject({ id: 'map-title', type: 'text', props: { text: 'F18P2 · 3F 無塵室' } });
+    expect(migrated.background?.v).toBe(2);
+    const deleted = { ...migrated, blocks: migrated.blocks.filter((b) => b.id !== 'map-title') };
+    expect(withMapTitle(deleted).blocks.some((b) => b.id === 'map-title')).toBe(false);
+  });
+
+  it('上傳的底圖不受影響', () => {
+    const page = { ...builtinLayoutPage('cleanroom-hvac')!, background: { src: 'data:image/png;base64,AA', width: 10, height: 10 } };
+    expect(withMapTitle(page)).toBe(page);
   });
 });

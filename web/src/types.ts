@@ -189,6 +189,8 @@ export interface PageBackground {
   name?: string;
   /** 底圖透明度 0.2～1（調淡讓燈號更明顯），預設 1 */
   opacity?: number;
+  /** 2＝內建底圖的大標題已改為畫布上的文字積木（舊資料讀取時補上） */
+  v?: 2;
 }
 
 export type PageMeta = Pick<UserPage, 'system' | 'phase'>;
