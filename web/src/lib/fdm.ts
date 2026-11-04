@@ -143,24 +143,38 @@ export interface VirtualTag {
   sources: string[];
 }
 
-/** 模擬上游的 virtual tag 主檔：每個廠區 × 系統一個，例如 F18P2.UPW.LAMP */
+/**
+ * 模擬上游的 virtual tag 主檔：
+ * - 每個廠區 × 系統一個整體燈號，例如 F18P2.UPW.LAMP
+ * - 每個子系統一個，例如 F18P2.UPW.POL.LAMP（該廠區沒有這組 Tag 就不建）
+ */
 export const VTAGS: VirtualTag[] = SITES.flatMap((site) =>
-  SYSTEMS.map((sys): VirtualTag => ({
-    key: tagKey(site.id, vtagName(site.id, sys.id)),
-    siteId: site.id,
-    siteName: site.name,
-    name: vtagName(site.id, sys.id),
-    desc: `${site.label} ${sys.name}燈號`,
-    sources: sys.tags.slice(0, sys.tags.length - site.dropTags).map((t) => tagKey(site.id, t.name)),
-  })),
+  SYSTEMS.flatMap((sys): VirtualTag[] => {
+    const tags = sys.tags.slice(0, sys.tags.length - site.dropTags);
+    const whole: VirtualTag = {
+      key: tagKey(site.id, vtagName(site.id, sys.id)),
+      siteId: site.id,
+      siteName: site.name,
+      name: vtagName(site.id, sys.id),
+      desc: `${site.label} ${sys.name}燈號`,
+      sources: tags.map((t) => tagKey(site.id, t.name)),
+    };
+    const groups = sys.groups.flatMap((g): VirtualTag[] => {
+      const sources = tags.filter((t) => t.name.startsWith(g.prefix)).map((t) => tagKey(site.id, t.name));
+      if (sources.length === 0) return [];
+      const name = vtagName(site.id, sys.id, g.code);
+      return [{ key: tagKey(site.id, name), siteId: site.id, siteName: site.name, name, desc: `${site.label} ${sys.name} ${g.name}燈號`, sources }];
+    });
+    return [whole, ...groups];
+  }),
 );
 export const VTAG_BY_KEY = new Map(VTAGS.map((v) => [v.key, v]));
 
-/** 模擬資料裡「廠區 × 系統」對應的 virtual tag 名稱 */
-export function vtagName(siteId: string, systemId: string) {
+/** 模擬資料裡「廠區 × 系統（× 子系統）」對應的 virtual tag 名稱 */
+export function vtagName(siteId: string, systemId: string, group?: string) {
   const site = SITES.find((s) => s.id === siteId);
   const sys = SYSTEMS.find((s) => s.id === systemId);
-  return `${site?.name ?? siteId.toUpperCase()}.${sys?.short ?? systemId.toUpperCase()}.LAMP`;
+  return [site?.name ?? siteId.toUpperCase(), sys?.short ?? systemId.toUpperCase(), group, 'LAMP'].filter(Boolean).join('.');
 }
 
 /** 模擬上游計算燈號代碼：任一 OOS → 2；否則任一 OOC → 1；有資料 → 0；全部沒資料 → null */

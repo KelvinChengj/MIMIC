@@ -1,5 +1,5 @@
-import { SITES, SYSTEMS, PAGES } from '../catalog/catalog';
-import { vtagName } from '../lib/fdm';
+import { SITES, STSP, SYSTEMS, PAGES, stspSlug } from '../catalog/catalog';
+import { tagKey, VTAG_BY_KEY, vtagName } from '../lib/fdm';
 import type { BlockSize, DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
 import { textFootprint } from './text';
 
@@ -98,6 +98,46 @@ export function defaultCommandLayout(): PageBlock[] {
   return out;
 }
 
+/**
+ * 南科戰情官總覽：每個廠區一列（列名在上方），每列五顆大尺寸燈號：水、電、空調、氣體、化學供應。
+ * 每顆燈代表該廠區 × 系統的值班情境頁，點了進入。頁首已有說明，畫布上不再放標題，整頁一個畫面看完。
+ */
+export function stspCommandLayout(): PageBlock[] {
+  const out: PageBlock[] = [];
+  const L = { w: 192, h: 176 }, GAP = 16, TOP = 20, ROW = 34 + L.h + 24;
+  STSP.sites.forEach((siteId, r) => {
+    const site = SITES.find((s) => s.id === siteId)!;
+    const y = TOP + r * ROW;
+    textAt(out, `row-${siteId}`, site.label, 'M', 24, y + 14);
+    STSP.columns.forEach((c, i) =>
+      out.push(mk(`duty-${siteId}-${c.key}`, 'duty', { page: stspSlug(siteId, c.key) } satisfies DutyProps, {
+        size: 'L', x: 24 + i * (L.w + GAP), y: y + 34, title: c.label,
+      })),
+    );
+  });
+  return out;
+}
+
+/**
+ * 單一廠區 × 系統的值班情境頁：每個子系統一顆大尺寸燈號（兩列），綁上游的 virtual tag，點了下鑽 InSQL tag。
+ * 不另放「整體」燈號：指揮官層取最差就是整體，而且燈號數量才不會重複計算。
+ */
+export function subsystemLayout(page: PageDef): PageBlock[] {
+  const site = SITES.find((s) => s.id === page.scope!.sites[0])!;
+  const sys = SYSTEMS.find((s) => s.id === page.scope!.systems[0])!;
+  const groups = sys.groups.filter((g) => VTAG_BY_KEY.has(tagKey(site.id, vtagName(site.id, sys.id, g.code))));
+  const out: PageBlock[] = [];
+  textAt(out, 'title', `${site.label} · ${sys.name}`, 'M', 24, 40);
+  textAt(out, 'hint', '點燈號下鑽 InSQL tag', 'S', 24, 76);
+  const L = { w: 192, h: 176 }, GAP = 16, TOP = 112, perRow = Math.ceil(groups.length / 2);
+  groups.forEach((g, i) =>
+    out.push(mk(`sub-${g.code.toLowerCase()}`, 'lamp', { vtag: { site: site.id, name: vtagName(site.id, sys.id, g.code) } } satisfies LampProps, {
+      size: 'L', x: 24 + (i % perRow) * (L.w + GAP), y: TOP + Math.floor(i / perRow) * (L.h + GAP), title: g.name,
+    })),
+  );
+  return out;
+}
+
 export const builtinLayer = (page: PageDef): Layer => page.layer ?? 'duty';
 
 /** 有資料範圍的內建頁面都用積木畫布呈現（值班情境或戰情指揮官） */
@@ -112,7 +152,10 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
   let cached = cache.get(slug);
   if (!cached) {
     const layer = builtinLayer(page);
-    const blocks = layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
+    const blocks =
+      page.preset === 'stsp' ? stspCommandLayout()
+      : page.preset === 'subsystems' ? subsystemLayout(page)
+      : layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
     cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer, sizes: 2 };
     cache.set(slug, cached);
   }

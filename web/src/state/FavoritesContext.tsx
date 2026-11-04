@@ -1,8 +1,8 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { newId } from '../lib/blocks';
 import * as fav from '../lib/favorites';
 import type { FavGroup } from '../lib/favorites';
-import { usePersistentState } from './storage';
+import { readStorage, usePersistentState, writeStorage } from './storage';
 
 export type { FavGroup };
 
@@ -12,7 +12,12 @@ const EXPLORE_GROUP = 'explore';
  * 預設的側欄：展示「我的最愛當專案清單」的用法，分類即專案、編號即優先順位。
  * 使用者改過之後以自己的設定為準；「重置展示資料」會回到這裡。
  */
+/** 主管簡報用的分類：新加入的展示頁，已有側欄設定的人也會在最上方看到一次（刪掉後不再加回） */
+const SEEDS: FavGroup[] = [{ id: 'exec', name: '★ 主管簡報', slugs: ['stsp'] }];
+const SEED_KEY = 'mimic.favorites.seeded';
+
 const DEFAULT_GROUPS: FavGroup[] = [
+  ...SEEDS,
   { id: 'proj-upw', name: '① UPW 擴充專案', slugs: ['upw', 'f18p2-upw-duty', 'upw-toc-daily'] },
   { id: 'proj-mau', name: '② MAU 節能專案', slugs: ['hvac', 'mau-humidity'] },
   { id: 'duty', name: '③ 日常值班', slugs: ['overview', 'power', 'exhaust', 'gas', 'chemical'] },
@@ -52,6 +57,17 @@ const Ctx = createContext<FavValue | null>(null);
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [stored, setGroups] = usePersistentState<FavGroup[]>('mimic.favorites.v1', DEFAULT_GROUPS);
   const groups = useMemo(() => cleanup(stored), [stored]);
+
+  useEffect(() => {
+    const done = readStorage<string[]>(SEED_KEY, []);
+    const todo = SEEDS.filter((g) => !done.includes(g.id));
+    if (todo.length === 0) return;
+    writeStorage(SEED_KEY, [...done, ...todo.map((g) => g.id)]);
+    setGroups((prev) => {
+      const add = todo.filter((g) => !prev.some((p) => p.id === g.id || p.slugs.some((s) => g.slugs.includes(s))));
+      return add.length ? [...add, ...prev] : prev;
+    });
+  }, [setGroups]);
 
   const value = useMemo<FavValue>(() => {
     const apply = (fn: (g: FavGroup[]) => FavGroup[]) => setGroups((prev) => fn(cleanup(prev)));

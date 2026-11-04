@@ -131,3 +131,64 @@ describe('文字積木寬度跟著內容', () => {
   it('大尺寸字級更大', () => expect(textFootprint('標題', 'L').w).toBeGreaterThan(textFootprint('標題', 'S').w));
   it('空白文字也有最小大小', () => expect(textFootprint('', 'M')).toMatchObject({ w: 48 }));
 });
+
+describe('南科戰情官總覽', () => {
+  const page = builtinLayoutPage('stsp')!;
+  const duties = page.blocks.filter((b) => b.type === 'duty');
+
+  it('是戰情指揮官頁：F18P1～P3 × 水電空調氣體化學供應，共 15 顆大尺寸燈號', () => {
+    expect(page.layer).toBe('command');
+    expect(duties).toHaveLength(15);
+    expect(duties.every((b) => b.size === 'L')).toBe(true);
+    expect(duties.slice(0, 5).map((b) => b.title)).toEqual(['水', '電', '空調', '氣體', '化學供應']);
+  });
+
+  it('每顆燈引用的值班情境頁都存在，而且是值班層', () => {
+    for (const b of duties) {
+      const target = builtinLayoutPage((b.props as DutyProps).page);
+      expect(target?.layer, (b.props as DutyProps).page).toBe('duty');
+    }
+  });
+
+  it('積木互不重疊，寬度放得進一般螢幕', () => {
+    expect(overlaps(page.blocks)).toEqual([]);
+    expect(Math.max(...page.blocks.map((b) => b.x + footprintOf(b).w))).toBeLessThanOrEqual(1060);
+  });
+
+  it('燈號與值班頁的整體燈號一致（取最差）', () => {
+    const e = env();
+    const def = getBlockDef('duty')!;
+    const lamp = getBlockDef('lamp')!;
+    for (const b of duties) {
+      const target = builtinLayoutPage((b.props as DutyProps).page)!;
+      const vt = (target.blocks.find((x) => x.type === 'lamp')!.props as LampProps).vtag!;
+      const whole: PageBlock = { id: 'w', type: 'lamp', title: '', size: 'M', x: 0, y: 0, props: { vtag: { site: vt.site, name: vt.name.replace(/\.[^.]+\.LAMP$/, '.LAMP') } } };
+      expect(def.status!(b, e), target.slug).toBe(lamp.status!(whole, e));
+    }
+  });
+});
+
+describe('子系統值班情境頁', () => {
+  it('每個子系統一顆大尺寸燈號，全部綁得到 virtual tag', () => {
+    const page = builtinLayoutPage('f18p2-water')!;
+    const lamps = page.blocks.filter((b) => b.type === 'lamp');
+    expect(lamps.every((b) => b.size === 'L')).toBe(true);
+    expect(lamps.map((b) => (b.props as LampProps).vtag!.name)).toEqual([
+      'F18P2.UPW.PRE.LAMP', 'F18P2.UPW.RO.LAMP', 'F18P2.UPW.EDI.LAMP', 'F18P2.UPW.POL.LAMP', 'F18P2.UPW.LOOP.LAMP',
+    ]);
+    expect(overlaps(page.blocks)).toEqual([]);
+  });
+
+  it('廠區沒有某組 Tag 時不放那顆燈（F18P3 沒有前處理 Tag）', () => {
+    const names = builtinLayoutPage('f18p3-water')!.blocks.filter((b) => b.type === 'lamp').map((b) => b.title);
+    expect(names).not.toContain('前處理');
+    expect(names).toHaveLength(4);
+  });
+
+  it('子系統的 Tag 合起來就是整體燈號的 Tag', () => {
+    for (const v of VTAGS.filter((x) => x.name.split('.').length === 3)) {
+      const subs = VTAGS.filter((x) => x.siteId === v.siteId && x.name.startsWith(v.name.replace('.LAMP', '.')) && x !== v);
+      expect(subs.flatMap((x) => x.sources).sort(), v.name).toEqual([...v.sources].sort());
+    }
+  });
+});

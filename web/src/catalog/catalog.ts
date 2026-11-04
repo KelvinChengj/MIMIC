@@ -30,6 +30,13 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'UPW-EDI-02.TMP', desc: 'EDI 混床 02 出水溫度', nominal: 23.8 },
       { name: 'UPW-PRE-04.TOC', desc: '前處理 04 TOC', nominal: 0.6 },
     ],
+    groups: [
+      { code: 'PRE', name: '前處理', prefix: 'UPW-PRE-' },
+      { code: 'RO', name: 'RO 逆滲透', prefix: 'UPW-RO-' },
+      { code: 'EDI', name: 'EDI 混床', prefix: 'UPW-EDI-' },
+      { code: 'POL', name: '拋光', prefix: 'UPW-POL-' },
+      { code: 'LOOP', name: '供水迴路', prefix: 'UPW-LOOP-' },
+    ],
   },
   {
     id: 'bulk',
@@ -54,6 +61,12 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'GAS-HE-01.PRS', desc: '氦氣 01 壓力', nominal: 7.5 },
       { name: 'GAS-GN2-03.FLW', desc: '一般氮氣 03 流量', nominal: 610 },
     ],
+    groups: [
+      { code: 'GN2', name: '一般氮氣', prefix: 'GAS-GN2-' },
+      { code: 'PN2', name: '純化氮氣', prefix: 'GAS-PN2-' },
+      { code: 'ARG', name: '氬氣', prefix: 'GAS-ARG-' },
+      { code: 'HE', name: '氦氣', prefix: 'GAS-HE-' },
+    ],
   },
   {
     id: 'chem',
@@ -76,6 +89,14 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'CHEM-IPA-01.PRS', desc: 'IPA 供液壓力', nominal: 3.0 },
       { name: 'CHEM-HCL-01.LVL', desc: 'HCl 儲槽 01 液位', nominal: 69 },
       { name: 'CHEM-SC1-01.PRS', desc: 'SC1 供液壓力', nominal: 2.8 },
+    ],
+    groups: [
+      { code: 'HF', name: 'HF 氫氟酸', prefix: 'CHEM-HF-' },
+      { code: 'H2SO4', name: 'H₂SO₄ 硫酸', prefix: 'CHEM-H2SO4-' },
+      { code: 'NH4OH', name: 'NH₄OH 氨水', prefix: 'CHEM-NH4OH-' },
+      { code: 'IPA', name: 'IPA 異丙醇', prefix: 'CHEM-IPA-' },
+      { code: 'HCL', name: 'HCl 鹽酸', prefix: 'CHEM-HCL-' },
+      { code: 'SC1', name: 'SC1 清洗液', prefix: 'CHEM-SC1-' },
     ],
   },
   {
@@ -101,6 +122,12 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'PWR-BUS-A.PF', desc: '匯流排 A 功率因數', nominal: 0.98 },
       { name: 'PWR-BUS-B.PF', desc: '匯流排 B 功率因數', nominal: 0.98 },
     ],
+    groups: [
+      { code: 'TR1', name: '變壓器 TR1', prefix: 'PWR-TR1.' },
+      { code: 'TR2', name: '變壓器 TR2', prefix: 'PWR-TR2.' },
+      { code: 'UPS', name: 'UPS 不斷電', prefix: 'PWR-UPS-' },
+      { code: 'BUS', name: '匯流排', prefix: 'PWR-BUS-' },
+    ],
   },
   {
     id: 'mau',
@@ -124,6 +151,12 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'MAU-03.DP', desc: 'MAU 03 濾網壓差', nominal: 170 },
       { name: 'MAU-04.TMP', desc: 'MAU 04 送風溫度', nominal: 22.0 },
     ],
+    groups: [
+      { code: 'MAU01', name: 'MAU 01', prefix: 'MAU-01.' },
+      { code: 'MAU02', name: 'MAU 02', prefix: 'MAU-02.' },
+      { code: 'MAU03', name: 'MAU 03', prefix: 'MAU-03.' },
+      { code: 'MAU04', name: 'MAU 04', prefix: 'MAU-04.' },
+    ],
   },
   {
     id: 'exhaust',
@@ -146,6 +179,13 @@ export const SYSTEMS: SystemDef[] = [
       { name: 'EXH-SCR-01.DP', desc: '洗滌塔 01 管道負壓', nominal: -330 },
       { name: 'EXH-SCR-01.FLW', desc: '洗滌塔 01 排氣風量', nominal: 14000 },
     ],
+    groups: [
+      { code: 'ACID', name: '酸排', prefix: 'EXH-ACID-' },
+      { code: 'ALK', name: '鹼排', prefix: 'EXH-ALK-' },
+      { code: 'VOC', name: 'VOC 排氣', prefix: 'EXH-VOC-' },
+      { code: 'GEX', name: '一般排氣', prefix: 'EXH-GEX-' },
+      { code: 'SCR', name: '洗滌塔', prefix: 'EXH-SCR-' },
+    ],
   },
 ];
 
@@ -159,6 +199,30 @@ export const metricOf = (sys: SystemDef, tagName: string) => {
 const ALL = { sites: SITES.map((s) => s.id), systems: SYSTEMS.map((s) => s.id) };
 const allSites = SITES.map((s) => s.id);
 
+/**
+ * 南科戰情官總覽：F18P1～P3 × 水、電、空調、氣體、化學供應。
+ * 每一格是一個值班情境頁（slug 如 f18p2-water），頁內是整體燈號 + 各子系統燈號。
+ */
+export const STSP = {
+  sites: ['f18p1', 'f18p2', 'f18p3'],
+  columns: [
+    { key: 'water', system: 'upw', label: '水', title: '水系統' },
+    { key: 'power', system: 'power', label: '電', title: '電力' },
+    { key: 'hvac', system: 'mau', label: '空調', title: '空調' },
+    { key: 'gas', system: 'bulk', label: '氣體', title: '氣體' },
+    { key: 'chem', system: 'chem', label: '化學供應', title: '化學供應' },
+  ],
+};
+export const stspSlug = (siteId: string, key: string) => `${siteId}-${key}`;
+const STSP_DUTY_PAGES: PageDef[] = STSP.sites.flatMap((siteId) =>
+  STSP.columns.map((c): PageDef => ({
+    slug: stspSlug(siteId, c.key),
+    title: `${SITES.find((s) => s.id === siteId)!.name} ${c.title}值班`,
+    scope: { sites: [siteId], systems: [c.system] },
+    preset: 'subsystems',
+  })),
+);
+
 export const PAGES: PageDef[] = [
   // ── 側欄預設 Favorites ──
   { slug: 'overview', title: 'F18A 全廠總覽', scope: ALL, layer: 'command' },
@@ -168,6 +232,8 @@ export const PAGES: PageDef[] = [
   { slug: 'exhaust', title: 'Exhaust 廢氣系統', scope: { sites: allSites, systems: ['exhaust'] } },
   { slug: 'gas', title: 'Gas 特殊氣體', scope: { sites: allSites, systems: ['bulk'] } },
   { slug: 'chemical', title: 'Chemical 化學品', scope: { sites: allSites, systems: ['chem'] } },
+  { slug: 'stsp', title: '南科戰情官總覽', scope: { sites: STSP.sites, systems: STSP.columns.map((c) => c.system) }, layer: 'command', preset: 'stsp' },
+  ...STSP_DUTY_PAGES,
   // 綠燈範例：F18P1 的公用系統目前都正常（戰情指揮官頁用來展示綠燈）
   { slug: 'f18p1-utility', title: 'F18P1 公用系統值班', scope: { sites: ['f18p1'], systems: ['upw', 'bulk', 'mau', 'exhaust'] } },
   { slug: 'f18p2-bulk', title: 'F18P2 大宗氣體值班', scope: { sites: ['f18p2'], systems: ['bulk'] } },

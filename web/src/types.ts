@@ -38,6 +38,8 @@ export interface SystemDef {
   defaultStaleMinutes: number;
   metrics: MetricDef[];
   tags: TagTemplate[];
+  /** 子系統：依 Tag 名稱前綴分組，每組在上游有一個自己的 virtual tag（例如 F18P2.UPW.POL.LAMP） */
+  groups: { code: string; name: string; prefix: string }[];
 }
 
 export interface SiteDef {
@@ -104,6 +106,8 @@ export interface PageDef {
   updatedRank?: number;
   /** 出現在 Explore 搜尋結果 */
   explore?: boolean;
+  /** 內建版面樣式：stsp＝南科戰情官總覽；subsystems＝單一廠區 × 系統，整體燈號 + 各子系統燈號 */
+  preset?: 'stsp' | 'subsystems';
 }
 
 /** 積木尺寸：小 / 中 / 大 */
