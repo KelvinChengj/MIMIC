@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { pageHost } from '../blocks/host';
 import { BlockDetail, BlockDialog } from '../components/BlockDialog';
+import { BackgroundPanel } from '../components/BackgroundPanel';
 import { BlockLibrary } from '../components/BlockLibrary';
 import { Canvas } from '../components/Canvas';
 import { PlusIcon } from '../components/Icons';
@@ -20,7 +21,7 @@ import { LAYER_META, LayerChip } from '../components/LayerChip';
  * 自建頁面與內建燈號牆頁面（page.builtin）共用；內建頁面不能改名或刪除（要回到預設請用「重置展示資料」）。
  */
 export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) {
-  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, setPageMeta } = useUserPages();
+  const { addBlock, updateBlock, moveBlock, removeBlock, duplicateBlock, renamePage, deletePage, setPageMeta, setBackground } = useUserPages();
   const { removeSlug } = useFavorites();
   const { showToast } = useUi();
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
   const canvas = (
     <Canvas
       blocks={page.blocks}
+      background={page.background}
       edit={edit}
       host={host}
       onOpen={setOpenId}
@@ -131,7 +133,9 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
 
       {edit ? (
         <div className="editor-layout">
-          <BlockLibrary layer={layer} onAdd={add} />
+          <BlockLibrary layer={layer} onAdd={add}>
+            <BackgroundPanel background={page.background} onChange={(bg) => setBackground(page.slug, bg)} />
+          </BlockLibrary>
           <div className="editor-layout__canvas">{canvas}</div>
         </div>
       ) : (

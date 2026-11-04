@@ -656,3 +656,23 @@ a.lampdot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; 
 .page-meta-edit select { height: 28px; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 13px; font-weight: 500; }
 .tp__count { margin: 0 0 4px; font-size: 12px; color: var(--muted); }
 .duty-current { margin: 0 0 6px; font-size: 13px; }
+
+/* 地圖型 MIMIC：底圖與積木一起縮放（積木座標以底圖像素為準） */
+.canvas--map { overflow: auto; }
+.canvas__fit { position: relative; }
+.canvas__inner--map { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-image: none; }
+.canvas--map.canvas--edit .canvas__inner--map { background-image: none; }
+.canvas__bg { position: absolute; left: 0; top: 0; display: block; pointer-events: none; user-select: none; }
+.canvas--map .lampdot .lamp { filter: drop-shadow(0 1px 3px rgba(31, 41, 51, 0.35)); }
+.bgpanel { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.bgpanel h3 { margin: 0 4px; font-size: 11.5px; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+.bgpanel h3 small { font-weight: 400; margin-left: 4px; }
+.bgpanel__thumb { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; }
+.bgpanel__name { margin: 0 4px; font-size: 12.5px; display: flex; justify-content: space-between; gap: 6px; overflow-wrap: anywhere; }
+.bgpanel__name small { color: var(--muted); white-space: nowrap; }
+.bgpanel__range { display: grid; gap: 2px; margin: 0 4px; font-size: 12px; color: var(--muted); }
+.bgpanel__range input { width: 100%; }
+.bgpanel__actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 4px; }
+.bgpanel__hint, .bgpanel__note { margin: 0 4px; font-size: 12px; color: var(--muted); }
+.bgpanel__note { font-size: 11px; }
+.bgpanel__error { margin: 0 4px; font-size: 12px; color: var(--red); }

@@ -12,12 +12,19 @@ const EXPLORE_GROUP = 'explore';
  * 預設的側欄：展示「我的最愛當專案清單」的用法，分類即專案、編號即優先順位。
  * 使用者改過之後以自己的設定為準；「重置展示資料」會回到這裡。
  */
-/** 主管簡報用的分類：新加入的展示頁，已有側欄設定的人也會在最上方看到一次（刪掉後不再加回） */
-const SEEDS: FavGroup[] = [{ id: 'exec', name: '★ 主管簡報', slugs: ['stsp'] }];
+/**
+ * 主管簡報用的分類與頁面：新加入的展示頁，已有側欄設定的人也會加入一次（刪掉後不再加回）。
+ * 每個 seed 只套用一次；分類還在就加到分類尾端，不在就在最上方建立。
+ */
+const EXEC_GROUP = { id: 'exec', name: '★ 主管簡報' };
+const SEEDS = [
+  { id: 'exec', slug: 'stsp' },
+  { id: 'exec-cleanroom', slug: 'cleanroom-hvac' },
+];
 const SEED_KEY = 'mimic.favorites.seeded';
 
 const DEFAULT_GROUPS: FavGroup[] = [
-  ...SEEDS,
+  { ...EXEC_GROUP, slugs: SEEDS.map((x) => x.slug) },
   { id: 'proj-upw', name: '① UPW 擴充專案', slugs: ['upw', 'f18p2-upw-duty', 'upw-toc-daily'] },
   { id: 'proj-mau', name: '② MAU 節能專案', slugs: ['hvac', 'mau-humidity'] },
   { id: 'duty', name: '③ 日常值班', slugs: ['overview', 'power', 'exhaust', 'gas', 'chemical'] },
@@ -60,13 +67,17 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const done = readStorage<string[]>(SEED_KEY, []);
-    const todo = SEEDS.filter((g) => !done.includes(g.id));
+    const todo = SEEDS.filter((x) => !done.includes(x.id));
     if (todo.length === 0) return;
-    writeStorage(SEED_KEY, [...done, ...todo.map((g) => g.id)]);
-    setGroups((prev) => {
-      const add = todo.filter((g) => !prev.some((p) => p.id === g.id || p.slugs.some((s) => g.slugs.includes(s))));
-      return add.length ? [...add, ...prev] : prev;
-    });
+    writeStorage(SEED_KEY, [...done, ...todo.map((x) => x.id)]);
+    setGroups((prev) =>
+      todo.reduce((g, seed) => {
+        if (g.some((x) => x.slugs.includes(seed.slug))) return g;
+        return g.some((x) => x.id === EXEC_GROUP.id)
+          ? g.map((x) => (x.id === EXEC_GROUP.id ? { ...x, slugs: [...x.slugs, seed.slug] } : x))
+          : [{ ...EXEC_GROUP, slugs: [seed.slug] }, ...g];
+      }, cleanup(prev)),
+    );
   }, [setGroups]);
 
   const value = useMemo<FavValue>(() => {

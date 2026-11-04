@@ -34,7 +34,7 @@ describe('值班情境頁 = 燈號（virtual tag）+ 文字積木', () => {
 
   it('只用「燈號」與「文字」兩種積木', () => expect(new Set(wall.map((b) => b.type))).toEqual(new Set(['lamp', 'text'])));
   it('每顆燈號綁該廠區 × 系統的 virtual tag', () => {
-    expect(lamps).toHaveLength(6);
+    expect(lamps).toHaveLength(7);
     expect(lamps.every((b) => b.size === 'M')).toBe(true);
     expect((lamps.find((b) => b.id === 'cell-f18p7-upw')!.props as LampProps).vtag).toEqual({ site: 'f18p7', name: 'F18P7.UPW.LAMP' });
   });
@@ -190,5 +190,34 @@ describe('子系統值班情境頁', () => {
       const subs = VTAGS.filter((x) => x.siteId === v.siteId && x.name.startsWith(v.name.replace('.LAMP', '.')) && x !== v);
       expect(subs.flatMap((x) => x.sources).sort(), v.name).toEqual([...v.sources].sort());
     }
+  });
+});
+
+describe('無塵室空調品質管理（地圖型值班情境）', () => {
+  const page = builtinLayoutPage('cleanroom-hvac')!;
+  const lamps = page.blocks.filter((b) => b.type === 'lamp');
+
+  it('值班層、有內建底圖，燈號是小尺寸', () => {
+    expect(page.layer).toBe('duty');
+    expect(page.background).toMatchObject({ src: 'builtin:f18p2-3f-cleanroom', width: 1200, height: 720 });
+    expect(lamps).toHaveLength(12);
+    expect(lamps.every((b) => b.size === 'S')).toBe(true);
+  });
+
+  it('燈號都在底圖範圍內、互不重疊，而且綁得到 virtual tag', () => {
+    expect(overlaps(page.blocks)).toEqual([]);
+    for (const b of lamps) {
+      const f = footprintOf(b);
+      expect(b.x >= 0 && b.y >= 0 && b.x + f.w <= 1200 && b.y + f.h <= 720, b.id).toBe(true);
+      const vt = (b.props as LampProps).vtag!;
+      expect(VTAGS.some((v) => v.siteId === vt.site && v.name === vt.name), vt.name).toBe(true);
+    }
+  });
+
+  it('展示情境：MAU 03 黃 → Bay C 紅、Bay G 黃；Bay H 無資料；其他綠', () => {
+    const e = env();
+    const lamp = getBlockDef('lamp')!;
+    const st = Object.fromEntries(lamps.map((b) => [b.id, lamp.status!(b, e)]));
+    expect(st).toMatchObject({ 'mau-3': 'yellow', 'bay-c': 'red', 'bay-g': 'yellow', 'bay-h': 'gray', 'bay-a': 'green', 'mau-1': 'green' });
   });
 });

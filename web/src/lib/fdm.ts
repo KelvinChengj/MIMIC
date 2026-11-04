@@ -24,6 +24,17 @@ const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
       'UPW-PRE-04.TOC': null,
     },
     power: { 'PWR-TR1.LOAD': 84, 'PWR-UPS-A.LOAD': 82 },
+    // 無塵室地圖範例：MAU 03 送風溫度偏高 → 它供氣的 Bay C 溫濕度超規、Bay G 偏高；Bay H 感測器離線
+    mau: { 'MAU-03.TMP': 23.9 },
+    cr: {
+      'CR3F-BAYC.TMP': 24.4,
+      'CR3F-BAYC.RH': 56,
+      'CR3F-BAYG.TMP': 23.3,
+      'CR3F-BAYH.TMP': null,
+      'CR3F-BAYH.RH': null,
+      'CR3F-BAYH.DP': null,
+      'CR3F-BAYH.PC': null,
+    },
   },
   f18p3: {
     upw: { 'UPW-POL-03.TOC': 1.6 }, // 超出管制、未超規格 → 黃燈範例

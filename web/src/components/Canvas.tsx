@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { backgroundUrl } from '../blocks/backgrounds';
 import { BlockRender } from '../blocks/BlockView';
 import { GRID, SIZE_LABEL, canvasExtent, snap } from '../blocks/layout';
 import { footprintOf, getBlockDef } from '../blocks/registry';
 import type { BlockHost } from '../blocks/types';
-import type { BlockSize, PageBlock } from '../types';
+import type { BlockSize, PageBackground, PageBlock } from '../types';
 import { CopyIcon, EditIcon, TrashIcon } from './Icons';
 import { SizeSwitch } from './SizeSwitch';
 
@@ -18,6 +19,8 @@ interface FrameProps {
   onResize: (size: BlockSize) => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** 地圖模式的縮放倍率：拖曳距離要換算回底圖座標 */
+  scale: number;
 }
 
 /**
@@ -27,7 +30,7 @@ interface FrameProps {
  * 編輯模式：點一下選取（工具列固定顯示在積木下方）、拖曳移動、
  * 雙擊 / Enter / 工具列「編輯」開啟編輯器、方向鍵微調位置。
  */
-function BlockFrame({ block, host, edit, selected, onSelect, onOpen, onMove, onResize, onDuplicate, onDelete }: FrameProps) {
+function BlockFrame({ block, host, edit, selected, onSelect, onOpen, onMove, onResize, onDuplicate, onDelete, scale }: FrameProps) {
   const def = getBlockDef(block.type);
   const fp = footprintOf(block);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -52,9 +55,9 @@ function BlockFrame({ block, host, edit, selected, onSelect, onOpen, onMove, onR
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d) return;
-    const dx = e.clientX - d.px;
-    const dy = e.clientY - d.py;
-    if (!d.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+    const dx = (e.clientX - d.px) / scale;
+    const dy = (e.clientY - d.py) / scale;
+    if (!d.moved && Math.abs(dx * scale) + Math.abs(dy * scale) < 5) return;
     d.moved = true;
     d.last = { x: snap(d.bx + dx), y: snap(d.by + dy) };
     setPos(d.last);
@@ -130,11 +133,32 @@ interface CanvasProps {
   onResize: (id: string, size: BlockSize) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  /** 有底圖時是地圖模式：畫布大小等於底圖，圖和積木一起縮放到畫面寬度 */
+  background?: PageBackground;
 }
 
-export function Canvas({ blocks, edit, host, empty, onOpen, onMove, onResize, onDuplicate, onDelete }: CanvasProps) {
+/** 地圖模式的縮放範圍：太小看不清、太大浪費畫面 */
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 1.6;
+
+export function Canvas({ blocks, edit, host, empty, onOpen, onMove, onResize, onDuplicate, onDelete, background }: CanvasProps) {
   const ext = canvasExtent(blocks, footprintOf);
   const [selected, setSelected] = useState<string | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const [avail, setAvail] = useState(0);
+
+  // 地圖模式：量畫布可用寬度，算出縮放倍率（視窗、側欄、全螢幕改變時重算）
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!background || !el) return;
+    const measure = () => setAvail(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [background]);
+  const stage = background && { w: Math.max(background.width, ext.w), h: Math.max(background.height, ext.h) };
+  const scale = stage && avail ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, (avail - 2) / stage.w)) : 1;
 
   // 選取中：按 Esc，或點到積木 / 對話框以外的任何地方，就取消選取
   useEffect(() => {
@@ -149,6 +173,40 @@ export function Canvas({ blocks, edit, host, empty, onOpen, onMove, onResize, on
     };
   }, [selected]);
 
+  const frames = blocks.map((b) => (
+    <BlockFrame
+      key={b.id}
+      block={b}
+      host={host}
+      edit={edit}
+      selected={edit && selected === b.id}
+      onSelect={() => setSelected(b.id)}
+      onOpen={() => onOpen(b.id)}
+      onMove={(x, y) => onMove(b.id, x, y)}
+      onResize={(s) => onResize(b.id, s)}
+      onDuplicate={() => onDuplicate(b.id)}
+      onDelete={() => { setSelected(null); onDelete(b.id); }}
+      scale={scale}
+    />
+  ));
+
+  if (stage && background) {
+    return (
+      <div ref={box} className={`canvas canvas--map ${edit ? 'canvas--edit' : ''}`} aria-label={edit ? '地圖畫布（編輯中）' : '地圖畫布'}>
+        <div className="canvas__fit" style={{ width: stage.w * scale, height: stage.h * scale }}>
+          <div className="canvas__inner canvas__inner--map" style={{ width: stage.w, height: stage.h, transform: `scale(${scale})` }}>
+            <img
+              className="canvas__bg" src={backgroundUrl(background.src)} alt={background.name ?? '底圖'}
+              width={background.width} height={background.height} draggable={false}
+              style={{ opacity: background.opacity ?? 1 }}
+            />
+            {frames}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`canvas ${edit ? 'canvas--edit' : ''}`} aria-label={edit ? '畫布（編輯中）' : '畫布'}>
       <div
@@ -157,21 +215,7 @@ export function Canvas({ blocks, edit, host, empty, onOpen, onMove, onResize, on
           ? { minWidth: ext.w + 120, minHeight: Math.max(ext.h + 160, 440) }
           : { minWidth: ext.w + 24, minHeight: ext.h + 24 }}
       >
-        {blocks.map((b) => (
-          <BlockFrame
-            key={b.id}
-            block={b}
-            host={host}
-            edit={edit}
-            selected={edit && selected === b.id}
-            onSelect={() => setSelected(b.id)}
-            onOpen={() => onOpen(b.id)}
-            onMove={(x, y) => onMove(b.id, x, y)}
-            onResize={(s) => onResize(b.id, s)}
-            onDuplicate={() => onDuplicate(b.id)}
-            onDelete={() => { setSelected(null); onDelete(b.id); }}
-          />
-        ))}
+        {frames}
         {blocks.length === 0 && <div className="canvas__empty">{empty}</div>}
       </div>
     </div>

@@ -106,8 +106,8 @@ export interface PageDef {
   updatedRank?: number;
   /** 出現在 Explore 搜尋結果 */
   explore?: boolean;
-  /** 內建版面樣式：stsp＝南科戰情官總覽；subsystems＝單一廠區 × 系統，整體燈號 + 各子系統燈號 */
-  preset?: 'stsp' | 'subsystems';
+  /** 內建版面樣式：stsp＝南科戰情官總覽；subsystems＝單一廠區 × 系統的各子系統燈號；cleanroom＝無塵室地圖 */
+  preset?: 'stsp' | 'subsystems' | 'cleanroom';
 }
 
 /** 積木尺寸：小 / 中 / 大 */
@@ -172,6 +172,21 @@ export interface UserPage {
   /** 頁面分類：System（系統，例如「超純水」）與 Phase（廠區，例如「F18P2」），和 Explore 的欄位一致 */
   system?: string;
   phase?: string;
+  /** 底圖（地圖型 MIMIC，例如無塵室平面圖）；有底圖時積木座標以底圖像素為準 */
+  background?: PageBackground;
+}
+
+/**
+ * 頁面底圖：積木座標以底圖的原始寬高為準，檢視時圖和積木一起縮放到畫面寬度，燈號才不會跑位。
+ * src 為上傳圖檔的 data URL，或 builtin:<id>（內建範本圖）；正式環境改存後端，這裡只放圖檔編號。
+ */
+export interface PageBackground {
+  src: string;
+  width: number;
+  height: number;
+  name?: string;
+  /** 底圖透明度 0.2～1（調淡讓燈號更明顯），預設 1 */
+  opacity?: number;
 }
 
 export type PageMeta = Pick<UserPage, 'system' | 'phase'>;

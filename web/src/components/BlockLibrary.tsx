@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { blockLibrary } from '../blocks/registry';
 import type { Layer } from '../types';
 import { PlusIcon } from './Icons';
 
 /** 積木庫：列出所有已註冊的積木種類，點一下就加到畫布 */
-export function BlockLibrary({ layer, onAdd }: { layer: Layer; onAdd: (type: string) => void }) {
+export function BlockLibrary({ layer, onAdd, children }: { layer: Layer; onAdd: (type: string) => void; children?: ReactNode }) {
   return (
     <aside className="library" aria-label="積木庫">
       <h2>積木庫</h2>
@@ -24,6 +25,7 @@ export function BlockLibrary({ layer, onAdd }: { layer: Layer; onAdd: (type: str
           </ul>
         </section>
       ))}
+      {children}
     </aside>
   );
 }

@@ -1,6 +1,7 @@
 import { SITES, STSP, SYSTEMS, PAGES, stspSlug } from '../catalog/catalog';
 import { tagKey, VTAG_BY_KEY, vtagName } from '../lib/fdm';
-import type { BlockSize, DutyProps, Layer, LampProps, PageBlock, PageDef, UserPage } from '../types';
+import type { BlockSize, DutyProps, Layer, LampProps, PageBackground, PageBlock, PageDef, UserPage } from '../types';
+import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect } from './backgrounds';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -138,6 +139,31 @@ export function subsystemLayout(page: PageDef): PageBlock[] {
   return out;
 }
 
+/**
+ * 地圖型值班情境：無塵室平面圖當底圖，每個 Bay 中央一顆小尺寸燈號（綁該 Bay 的溫濕度 virtual tag），
+ * 每台 MAU 機組上一顆（綁 MAU 子系統 virtual tag）。燈號座標以底圖像素為準。
+ */
+export function cleanroomLayout(page: PageDef): PageBlock[] {
+  const site = page.scope!.sites[0];
+  const DOT = { w: 48, h: 44 };
+  const bays = CLEANROOM.bays.map(([id, area], i) => {
+    const r = bayRect(i);
+    return mk(`bay-${id.toLowerCase()}`, 'lamp', { vtag: { site, name: vtagName(site, 'cr', `BAY${id}`) } } satisfies LampProps, {
+      size: 'S', title: `Bay ${id} ${area}`, x: Math.round(r.x + (r.w - DOT.w) / 2), y: Math.round(r.y + (r.h - DOT.h) / 2 + 14),
+    });
+  });
+  const maus = CLEANROOM.cols.map((_, i) => {
+    const m = mauRect(i);
+    return mk(`mau-${i + 1}`, 'lamp', { vtag: { site, name: vtagName(site, 'mau', `MAU0${i + 1}`) } } satisfies LampProps, {
+      size: 'S', title: `MAU 0${i + 1}`, x: Math.round(m.x + m.w - DOT.w - 6), y: Math.round(m.y + (m.h - DOT.h) / 2),
+    });
+  });
+  return [...maus, ...bays];
+}
+
+const builtinBackground = (page: PageDef): PageBackground | undefined =>
+  page.preset === 'cleanroom' ? { ...BUILTIN_BACKGROUNDS[0], opacity: 1 } : undefined;
+
 export const builtinLayer = (page: PageDef): Layer => page.layer ?? 'duty';
 
 /** 有資料範圍的內建頁面都用積木畫布呈現（值班情境或戰情指揮官） */
@@ -155,8 +181,10 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
     const blocks =
       page.preset === 'stsp' ? stspCommandLayout()
       : page.preset === 'subsystems' ? subsystemLayout(page)
+      : page.preset === 'cleanroom' ? cleanroomLayout(page)
       : layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
-    cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer, sizes: 2 };
+    const background = builtinBackground(page);
+    cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer, sizes: 2, ...(background && { background }) };
     cache.set(slug, cached);
   }
   return cached;
