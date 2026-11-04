@@ -20,6 +20,7 @@ const EXEC_GROUP = { id: 'exec', name: '★ 主管簡報' };
 const SEEDS = [
   { id: 'exec', slug: 'stsp' },
   { id: 'exec-cleanroom', slug: 'cleanroom-hvac' },
+  { id: 'exec-water', slug: 'water-balance' },
 ];
 const SEED_KEY = 'mimic.favorites.seeded';
 

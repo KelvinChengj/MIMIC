@@ -13,6 +13,8 @@ const SCENARIOS: Record<string, Record<string, Record<string, Pin>>> = {
   f18p1: {
     chem: { 'CHEM-HF-01.LVL': 28, 'CHEM-NH4OH-01.TMP': 29 },
     power: { 'PWR-TR1.TMP': 97 },
+    // 水平衡範例：含氟廢水 F⁻ 超標（紅）；補水與放流加損耗對不上，差異率偏高（黃）
+    ww: { 'WW-FW-01.F': 16.5, 'WW-BAL-01.DIFF': 6.8 },
   },
   f18p2: {
     upw: {

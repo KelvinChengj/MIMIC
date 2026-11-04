@@ -243,6 +243,51 @@ export const SYSTEMS: SystemDef[] = [
       { code: 'BAYH', name: 'Bay H 量測區', prefix: 'CR3F-BAYH.' },
     ],
   },
+  {
+    id: 'ww',
+    name: '廢水回收',
+    short: 'WW',
+    defaultStaleMinutes: 15,
+    metrics: [
+      { code: 'LVL', label: '液位', unit: '%', decimals: 0, defaults: { yellowLow: 30, redLow: 15 } },
+      { code: 'PH', label: 'pH', unit: '', decimals: 1, defaults: { yellowLow: 6, redLow: 5.5, yellowHigh: 9, redHigh: 9.5 } },
+      { code: 'F', label: 'F⁻ 濃度', unit: 'mg/L', decimals: 1, defaults: { yellowHigh: 12, redHigh: 15 } },
+      { code: 'SS', label: '懸浮固體', unit: 'mg/L', decimals: 0, defaults: { yellowHigh: 30, redHigh: 50 } },
+      { code: 'TOC', label: 'TOC', unit: 'mg/L', decimals: 0, defaults: { yellowHigh: 25, redHigh: 40 } },
+      { code: 'CND', label: '導電度', unit: 'µS/cm', decimals: 0, defaults: { yellowHigh: 200, redHigh: 300 } },
+      // 流量只做水平衡紀錄，不判燈號
+      { code: 'FLW', label: '流量', unit: 'm³/h', decimals: 0, defaults: {} },
+      { code: 'DIFF', label: '水平衡差異率', unit: '%', decimals: 1, defaults: { yellowHigh: 5, redHigh: 10 } },
+    ],
+    tags: [
+      { name: 'WW-RAW-01.LVL', desc: '原水池液位', nominal: 65 },
+      { name: 'WW-BAL-MKP.FLW', desc: '自來水補水量', nominal: 600 },
+      { name: 'WW-BAL-LOSS.FLW', desc: '蒸發與損耗', nominal: 80 },
+      { name: 'WW-BAL-01.DIFF', desc: '水平衡差異率', nominal: 1.5 },
+      { name: 'WW-ORG-01.TOC', desc: '有機廢水 TOC', nominal: 15 },
+      { name: 'WW-ORG-01.FLW', desc: '有機廢水流量', nominal: 100 },
+      { name: 'WW-AW-01.PH', desc: '酸鹼廢水 pH', nominal: 7.0 },
+      { name: 'WW-AW-01.FLW', desc: '酸鹼廢水流量', nominal: 300 },
+      { name: 'WW-CMP-01.SS', desc: '研磨廢水 SS', nominal: 20 },
+      { name: 'WW-CMP-01.FLW', desc: '研磨廢水流量', nominal: 300 },
+      { name: 'WW-FW-01.F', desc: '含氟廢水 F⁻ 濃度', nominal: 8 },
+      { name: 'WW-FW-01.FLW', desc: '含氟廢水流量', nominal: 220 },
+      { name: 'WW-RCL-01.FLW', desc: '回收水量', nominal: 400 },
+      { name: 'WW-RCL-01.CND', desc: '回收水導電度', nominal: 120 },
+      { name: 'WW-DIS-01.FLW', desc: '放流水量', nominal: 520 },
+      { name: 'WW-DIS-01.PH', desc: '放流水 pH', nominal: 7.2 },
+    ],
+    groups: [
+      { code: 'RAW', name: '原水池', prefix: 'WW-RAW-' },
+      { code: 'BAL', name: '水平衡', prefix: 'WW-BAL-' },
+      { code: 'ORG', name: '有機廢水', prefix: 'WW-ORG-' },
+      { code: 'AW', name: '酸鹼廢水', prefix: 'WW-AW-' },
+      { code: 'CMP', name: '研磨廢水', prefix: 'WW-CMP-' },
+      { code: 'FW', name: '含氟廢水', prefix: 'WW-FW-' },
+      { code: 'RCL', name: '回收水', prefix: 'WW-RCL-' },
+      { code: 'DIS', name: '放流水', prefix: 'WW-DIS-' },
+    ],
+  },
 ];
 
 export const siteById = (id: string) => SITES.find((s) => s.id === id);
@@ -293,6 +338,8 @@ export const PAGES: PageDef[] = [
   // 綠燈範例：F18P1 的公用系統目前都正常（戰情指揮官頁用來展示綠燈）
   // 地圖型 MIMIC：無塵室平面圖當底圖，各 Bay 與 MAU 放小尺寸燈號
   { slug: 'cleanroom-hvac', title: '無塵室空調品質管理', scope: { sites: ['f18p2'], systems: ['cr', 'mau'] }, preset: 'cleanroom' },
+  // 拓樸型 MIMIC：純水／廢水水平衡流程圖當底圖，各處理單元放小尺寸燈號
+  { slug: 'water-balance', title: '純水廢水水平衡圖', scope: { sites: ['f18p1'], systems: ['upw', 'ww'] }, preset: 'water' },
   { slug: 'f18p1-utility', title: 'F18P1 公用系統值班', scope: { sites: ['f18p1'], systems: ['upw', 'bulk', 'mau', 'exhaust'] } },
   { slug: 'f18p2-bulk', title: 'F18P2 大宗氣體值班', scope: { sites: ['f18p2'], systems: ['bulk'] } },
 

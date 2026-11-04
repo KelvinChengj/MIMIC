@@ -1,7 +1,7 @@
 import { SITES, STSP, SYSTEMS, PAGES, stspSlug } from '../catalog/catalog';
 import { tagKey, VTAG_BY_KEY, vtagName } from '../lib/fdm';
 import type { BlockSize, DutyProps, Layer, LampProps, PageBackground, PageBlock, PageDef, UserPage } from '../types';
-import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect } from './backgrounds';
+import { bayRect, BUILTIN_BACKGROUNDS, CLEANROOM, mauRect, WATER, waterLampAt, type WaterNodeId } from './backgrounds';
 import { textFootprint } from './text';
 
 const mk = (id: string, type: string, props: unknown, over: Partial<PageBlock> = {}): PageBlock => ({
@@ -161,8 +161,27 @@ export function cleanroomLayout(page: PageDef): PageBlock[] {
   return [...maus, ...bays];
 }
 
-const builtinBackground = (page: PageDef): PageBackground | undefined =>
-  page.preset === 'cleanroom' ? { ...BUILTIN_BACKGROUNDS[0], opacity: 1 } : undefined;
+/** 水平衡拓樸圖：每個處理單元一顆燈號，純水單元綁超純水子系統、廢水單元綁廢水回收子系統的 virtual tag */
+const WATER_LAMPS: [WaterNodeId, string, string][] = [
+  ['raw', 'ww', 'RAW'], ['pre', 'upw', 'PRE'], ['ro', 'upw', 'RO'], ['edi', 'upw', 'EDI'], ['pol', 'upw', 'POL'], ['loop', 'upw', 'LOOP'],
+  ['rcl', 'ww', 'RCL'], ['bal', 'ww', 'BAL'], ['org', 'ww', 'ORG'], ['aw', 'ww', 'AW'], ['cmp', 'ww', 'CMP'], ['fw', 'ww', 'FW'], ['dis', 'ww', 'DIS'],
+];
+
+export function waterBalanceLayout(page: PageDef): PageBlock[] {
+  const site = page.scope!.sites[0];
+  return WATER_LAMPS.map(([id, sys, group]) =>
+    mk(`node-${id}`, 'lamp', { vtag: { site, name: vtagName(site, sys, group) } } satisfies LampProps, {
+      size: 'S', title: WATER.nodes[id].title, ...waterLampAt(id),
+    }),
+  );
+}
+
+const builtinBackground = (page: PageDef): PageBackground | undefined => {
+  const bg = page.preset === 'cleanroom' ? BUILTIN_BACKGROUNDS[0] : page.preset === 'water' ? BUILTIN_BACKGROUNDS[1] : undefined;
+  if (!bg) return undefined;
+  const { label: _label, ...rest } = bg;
+  return { ...rest, opacity: 1 };
+};
 
 export const builtinLayer = (page: PageDef): Layer => page.layer ?? 'duty';
 
@@ -182,6 +201,7 @@ export function builtinLayoutPage(slug: string): UserPage | undefined {
       page.preset === 'stsp' ? stspCommandLayout()
       : page.preset === 'subsystems' ? subsystemLayout(page)
       : page.preset === 'cleanroom' ? cleanroomLayout(page)
+      : page.preset === 'water' ? waterBalanceLayout(page)
       : layer === 'command' ? defaultCommandLayout() : defaultWallLayout(page);
     const background = builtinBackground(page);
     cached = { slug, title: page.title, blocks, createdAt: 0, builtin: true, layer, sizes: 2, ...(background && { background }) };

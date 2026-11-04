@@ -74,12 +74,137 @@ function cleanroomSvg(): string {
   return out.join('');
 }
 
-const BUILTIN: Record<string, () => string> = { [CLEANROOM.id]: cleanroomSvg };
+interface WaterNode {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  title: string;
+  sub: string;
+  /** 有燈號的處理單元（自來水、Fab 只是流程節點） */
+  lamp: boolean;
+}
+
+/**
+ * 純水／廢水水平衡拓樸圖：上排純水製造、右側供水到 Fab，下排四股廢水，
+ * 酸鹼與有機廢水回收回原水池，研磨與含氟廢水處理後放流。流量為設計值（m³/h），收支平衡：
+ * 補水 600 ＝ 放流 520 ＋ 損耗 80；回收 400 ／ 用水 1,000。
+ */
+export const WATER = {
+  id: 'f18p1-water-balance',
+  name: 'F18P1 純水／廢水水平衡（示意圖）',
+  width: 1200,
+  height: 720,
+  nodes: {
+    src: { x: 30, y: 120, w: 120, h: 70, title: '自來水補水', sub: '600 m³/h', lamp: false },
+    raw: { x: 190, y: 120, w: 150, h: 70, title: '原水池', sub: '液位', lamp: true },
+    pre: { x: 380, y: 120, w: 150, h: 70, title: '前處理', sub: 'TOC', lamp: true },
+    ro: { x: 570, y: 120, w: 150, h: 70, title: 'RO 逆滲透', sub: '流量', lamp: true },
+    edi: { x: 760, y: 120, w: 150, h: 70, title: 'EDI 混床', sub: '溫度', lamp: true },
+    pol: { x: 950, y: 120, w: 150, h: 70, title: '拋光', sub: 'TOC · 電阻率', lamp: true },
+    loop: { x: 950, y: 250, w: 150, h: 70, title: '供水迴路', sub: '壓力', lamp: true },
+    fab: { x: 800, y: 380, w: 370, h: 70, title: '製程機台（Fab）', sub: '用水 1,000 m³/h', lamp: false },
+    rcl: { x: 190, y: 250, w: 150, h: 70, title: '回收水', sub: '導電度', lamp: true },
+    bal: { x: 380, y: 372, w: 380, h: 86, title: '水平衡', sub: '', lamp: true },
+    org: { x: 360, y: 560, w: 140, h: 70, title: '有機廢水', sub: 'TOC', lamp: true },
+    aw: { x: 530, y: 560, w: 140, h: 70, title: '酸鹼廢水', sub: 'pH', lamp: true },
+    cmp: { x: 700, y: 560, w: 140, h: 70, title: '研磨廢水', sub: 'SS', lamp: true },
+    fw: { x: 870, y: 560, w: 140, h: 70, title: '含氟廢水', sub: 'F⁻', lamp: true },
+    dis: { x: 1040, y: 560, w: 140, h: 70, title: '放流水', sub: 'pH · 520 m³/h', lamp: true },
+  } satisfies Record<string, WaterNode>,
+};
+export type WaterNodeId = keyof typeof WATER.nodes;
+
+/** 燈號放在節點方框內右側（小尺寸燈號 48 × 44） */
+export const waterLampAt = (id: WaterNodeId) => {
+  const n = WATER.nodes[id];
+  return { x: n.x + n.w - 52, y: n.y + Math.round((n.h - 44) / 2) };
+};
+
+function waterSvg(): string {
+  const { width: W, height: H, nodes: N } = WATER;
+  const C = { upw: '#3f7cc0', ww: '#8a6a3e', rcl: '#4b7f4a', loss: '#8d99a6' };
+  const out: string[] = [];
+  const line = (pts: [number, number][], color: string, dash = false) =>
+    out.push(`<polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round"${dash ? ' stroke-dasharray="9 6"' : ''} marker-end="url(#a-${color.slice(1)})"/>`);
+  const seg = (pts: [number, number][], color: string) =>
+    out.push(`<polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round"/>`);
+  const label = (x: number, y: number, text: string, color: string, anchor = 'middle') =>
+    out.push(`<text x="${x}" y="${y}" font-size="12.5" font-weight="700" fill="${color}" text-anchor="${anchor}" stroke="#ffffff" stroke-width="4" paint-order="stroke">${text}</text>`);
+
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ${FONT}>`);
+  out.push('<defs>');
+  for (const c of Object.values(C))
+    out.push(`<marker id="a-${c.slice(1)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${c}"/></marker>`);
+  out.push('</defs>');
+  out.push(`<rect width="${W}" height="${H}" fill="#f6f7f9"/>`);
+  out.push(`<text x="30" y="40" font-size="22" font-weight="700" fill="#2b4764">F18P1 · 純水／廢水 水平衡</text>`);
+  out.push(`<text x="30" y="64" font-size="13" fill="#6b7280">示意圖 · 流量為設計值（m³/h）· 藍：純水　棕：廢水　綠：回收</text>`);
+  // 區域
+  out.push(`<rect x="365" y="96" width="750" height="239" rx="10" fill="#eaf1f9" stroke="#c6d6e8"/>`);
+  out.push(`<text x="377" y="113" font-size="12" font-weight="700" fill="#3f7cc0">純水系統（UPW）</text>`);
+  out.push(`<rect x="345" y="488" width="845" height="222" rx="10" fill="#f6efe5" stroke="#e2d3bd"/>`);
+  out.push(`<text x="357" y="506" font-size="12" font-weight="700" fill="#8a6a3e">廢水處理</text>`);
+
+  // 純水：補水 → 原水池 → 前處理 → RO → EDI → 拋光 → 供水迴路 → Fab
+  line([[150, 155], [188, 155]], C.upw);
+  line([[340, 155], [378, 155]], C.upw);
+  label(359, 180, '1,000', C.upw);
+  line([[530, 155], [568, 155]], C.upw);
+  line([[720, 155], [758, 155]], C.upw);
+  line([[910, 155], [948, 155]], C.upw);
+  line([[1025, 190], [1025, 248]], C.upw);
+  line([[1025, 320], [1025, 378]], C.upw);
+  label(1035, 356, 'UPW 1,000', C.upw, 'start');
+  // 損耗
+  line([[1150, 380], [1150, 348]], C.loss);
+  label(1190, 340, '損耗 80', C.loss, 'end');
+  // Fab → 四股廢水（集水管）
+  seg([[985, 450], [985, 520], [430, 520]], C.ww);
+  for (const [x, v] of [[430, '100'], [600, '300'], [770, '300'], [940, '220']] as const) {
+    line([[x, 520], [x, 558]], C.ww);
+    label(x + 8, 514, v, C.ww, 'start');
+  }
+  // 研磨＋含氟 → 放流
+  seg([[770, 630], [770, 680], [1110, 680]], C.ww);
+  seg([[940, 630], [940, 680]], C.ww);
+  line([[1110, 680], [1110, 632]], C.ww);
+  label(940, 700, '研磨 300 ＋ 含氟 220 → 放流 520', C.ww);
+  // 酸鹼＋有機 → 回收水 → 原水池
+  seg([[600, 630], [600, 680], [265, 680], [265, 595]], C.rcl);
+  seg([[360, 595], [265, 595]], C.rcl);
+  line([[265, 595], [265, 322]], C.rcl, true);
+  label(430, 674, '酸鹼 300', C.rcl);
+  label(312, 588, '有機 100', C.rcl);
+  line([[265, 250], [265, 192]], C.rcl, true);
+  label(275, 226, '回收 400', C.rcl, 'start');
+
+  // 節點
+  for (const [id, n] of Object.entries(N)) {
+    const plain = !n.lamp;
+    out.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${plain ? 35 : 8}" fill="${plain ? '#eef1f4' : '#ffffff'}" stroke="${plain ? '#a9b4bf' : '#8fa3b8'}" stroke-width="1.5"/>`);
+    if (id === 'bal') {
+      out.push(`<text x="${n.x + 14}" y="${n.y + 26}" font-size="15" font-weight="700" fill="#2b4764">水平衡（設計）</text>`);
+      out.push(`<text x="${n.x + 14}" y="${n.y + 50}" font-size="13" fill="#3d4b59">補水 600 ＝ 放流 520 ＋ 損耗 80</text>`);
+      out.push(`<text x="${n.x + 14}" y="${n.y + 71}" font-size="13" fill="#3d4b59">回收 400 ／ 用水 1,000 → 回收率 40%</text>`);
+      continue;
+    }
+    const tx = plain ? n.x + n.w / 2 : n.x + 12;
+    const anchor = plain ? 'middle' : 'start';
+    out.push(`<text x="${tx}" y="${n.y + 30}" font-size="15" font-weight="700" fill="#2b4764" text-anchor="${anchor}">${n.title}</text>`);
+    out.push(`<text x="${tx}" y="${n.y + 51}" font-size="12" fill="#6b7280" text-anchor="${anchor}">${n.sub}</text>`);
+  }
+  out.push('</svg>');
+  return out.join('');
+}
+
+const BUILTIN: Record<string, () => string> = { [CLEANROOM.id]: cleanroomSvg, [WATER.id]: waterSvg };
 const cache = new Map<string, string>();
 
-/** 內建範本底圖（可在編輯模式的「底圖」區套用） */
-export const BUILTIN_BACKGROUNDS: PageBackground[] = [
-  { src: `builtin:${CLEANROOM.id}`, width: CLEANROOM.width, height: CLEANROOM.height, name: CLEANROOM.name },
+/** 內建範本底圖（可在編輯模式的「底圖」區套用）；label 是按鈕上的短名稱 */
+export const BUILTIN_BACKGROUNDS: (PageBackground & { label: string })[] = [
+  { src: `builtin:${CLEANROOM.id}`, width: CLEANROOM.width, height: CLEANROOM.height, name: CLEANROOM.name, label: '無塵室示意圖' },
+  { src: `builtin:${WATER.id}`, width: WATER.width, height: WATER.height, name: WATER.name, label: '水平衡拓樸圖' },
 ];
 
 /** 底圖的實際圖檔網址：builtin:<id> 轉成 SVG data URL，其餘（上傳的 data URL）原樣使用 */

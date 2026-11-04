@@ -106,8 +106,8 @@ export interface PageDef {
   updatedRank?: number;
   /** 出現在 Explore 搜尋結果 */
   explore?: boolean;
-  /** 內建版面樣式：stsp＝南科戰情官總覽；subsystems＝單一廠區 × 系統的各子系統燈號；cleanroom＝無塵室地圖 */
-  preset?: 'stsp' | 'subsystems' | 'cleanroom';
+  /** 內建版面樣式：stsp＝南科戰情官總覽；subsystems＝單一廠區 × 系統的各子系統燈號；cleanroom＝無塵室地圖；water＝純水廢水水平衡拓樸圖 */
+  preset?: 'stsp' | 'subsystems' | 'cleanroom' | 'water';
 }
 
 /** 積木尺寸：小 / 中 / 大 */

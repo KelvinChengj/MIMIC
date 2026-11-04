@@ -34,7 +34,7 @@ describe('值班情境頁 = 燈號（virtual tag）+ 文字積木', () => {
 
   it('只用「燈號」與「文字」兩種積木', () => expect(new Set(wall.map((b) => b.type))).toEqual(new Set(['lamp', 'text'])));
   it('每顆燈號綁該廠區 × 系統的 virtual tag', () => {
-    expect(lamps).toHaveLength(7);
+    expect(lamps).toHaveLength(8);
     expect(lamps.every((b) => b.size === 'M')).toBe(true);
     expect((lamps.find((b) => b.id === 'cell-f18p7-upw')!.props as LampProps).vtag).toEqual({ site: 'f18p7', name: 'F18P7.UPW.LAMP' });
   });
@@ -219,5 +219,36 @@ describe('無塵室空調品質管理（地圖型值班情境）', () => {
     const lamp = getBlockDef('lamp')!;
     const st = Object.fromEntries(lamps.map((b) => [b.id, lamp.status!(b, e)]));
     expect(st).toMatchObject({ 'mau-3': 'yellow', 'bay-c': 'red', 'bay-g': 'yellow', 'bay-h': 'gray', 'bay-a': 'green', 'mau-1': 'green' });
+  });
+});
+
+describe('純水廢水水平衡圖（拓樸型值班情境）', () => {
+  const page = builtinLayoutPage('water-balance')!;
+  const lamps = page.blocks.filter((b) => b.type === 'lamp');
+
+  it('值班層、有水平衡拓樸底圖，13 個處理單元各一顆小尺寸燈號', () => {
+    expect(page.layer).toBe('duty');
+    expect(page.background).toMatchObject({ src: 'builtin:f18p1-water-balance', width: 1200, height: 720 });
+    expect(lamps).toHaveLength(13);
+    expect(lamps.every((b) => b.size === 'S')).toBe(true);
+  });
+
+  it('燈號在底圖範圍內、互不重疊，全部綁得到 virtual tag', () => {
+    expect(overlaps(page.blocks)).toEqual([]);
+    for (const b of lamps) {
+      const f = footprintOf(b);
+      expect(b.x >= 0 && b.y >= 0 && b.x + f.w <= 1200 && b.y + f.h <= 720, b.id).toBe(true);
+      const vt = (b.props as LampProps).vtag!;
+      expect(VTAGS.some((v) => v.siteId === vt.site && v.name === vt.name), vt.name).toBe(true);
+    }
+  });
+
+  it('展示情境：含氟廢水紅、水平衡黃，其餘綠', () => {
+    const e = env();
+    const lamp = getBlockDef('lamp')!;
+    const st = Object.fromEntries(lamps.map((b) => [b.id, lamp.status!(b, e)]));
+    expect(st['node-fw']).toBe('red');
+    expect(st['node-bal']).toBe('yellow');
+    expect(Object.entries(st).filter(([id]) => id !== 'node-fw' && id !== 'node-bal').every(([, s]) => s === 'green')).toBe(true);
   });
 });

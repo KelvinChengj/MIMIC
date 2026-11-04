@@ -79,8 +79,8 @@ export function BackgroundPanel({ background, onChange }: { background?: PageBac
           <p className="bgpanel__hint">放上無塵室平面圖，再把小尺寸燈號擺到各區塊。</p>
           <div className="bgpanel__actions">
             <button className="btn btn--xs" onClick={() => file.current?.click()}>上傳圖檔</button>
-            {BUILTIN_BACKGROUNDS.map((bg) => (
-              <button key={bg.src} className="btn btn--xs" onClick={() => onChange({ ...bg, opacity: 1 })}>套用範本：無塵室示意圖</button>
+            {BUILTIN_BACKGROUNDS.map(({ label, ...bg }) => (
+              <button key={bg.src} className="btn btn--xs" onClick={() => onChange({ ...bg, opacity: 1 })}>套用範本：{label}</button>
             ))}
           </div>
         </>
