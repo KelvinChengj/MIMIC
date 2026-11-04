@@ -4,8 +4,9 @@ import { pageHost } from '../blocks/host';
 import { BlockDetail, BlockDialog } from '../components/BlockDialog';
 import { BackgroundPanel } from '../components/BackgroundPanel';
 import { BlockLibrary } from '../components/BlockLibrary';
+import { CopyPageDialog } from '../components/CopyPageDialog';
 import { Canvas } from '../components/Canvas';
-import { PlusIcon } from '../components/Icons';
+import { CopyIcon, PlusIcon } from '../components/Icons';
 import { Legend } from '../components/Lamp';
 import { BackButton, FullscreenButton, PageHeader } from '../components/PageParts';
 import { useFavorites } from '../state/FavoritesContext';
@@ -27,6 +28,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [copying, setCopying] = useState(false);
   const host = useMemo(() => pageHost(page.slug), [page.slug]);
   const layer = layerOf(page);
   const meta = LAYER_META[layer];
@@ -120,11 +122,18 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
       ) : (
         <PageHeader
           title={<>{page.title} <LayerChip layer={layer} /></>}
-          sub={<>{(page.system || page.phase) && <span className="page-meta">{[page.system, page.phase].filter(Boolean).join(' · ')}</span>}{meta.hint}</>}
+          sub={
+            <>
+              {(page.system || page.phase) && <span className="page-meta">{[page.system, page.phase].filter(Boolean).join(' · ')}</span>}
+              {page.copiedFrom && <span className="page-origin">複製自 <Link to={`/p/${page.copiedFrom.slug}`}>{page.copiedFrom.title}</Link></span>}
+              {meta.hint}
+            </>
+          }
           actions={
             <>
               <BackButton />
               <FullscreenButton />
+              <button className="btn" onClick={() => setCopying(true)} title="複製成自己的新頁面，可順便換廠區"><CopyIcon size={16} /> Duplicate</button>
               <Link className="btn btn--primary" to={`/p/${page.slug}/edit`}>Edit</Link>
             </>
           }
@@ -147,6 +156,7 @@ export function UserPageView({ page, edit }: { page: UserPage; edit: boolean }) 
         <BlockDialog block={open} onChange={(patch) => updateBlock(page.slug, open.id, patch)} onClose={() => setOpenId(null)} />
       )}
       {open && !edit && <BlockDetail block={open} onClose={() => setOpenId(null)} />}
+      {copying && <CopyPageDialog page={page} onClose={() => setCopying(false)} />}
     </>
   );
 }

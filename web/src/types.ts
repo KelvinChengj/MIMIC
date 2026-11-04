@@ -174,6 +174,8 @@ export interface UserPage {
   phase?: string;
   /** 底圖（地圖型 MIMIC，例如無塵室平面圖）；有底圖時積木座標以底圖像素為準 */
   background?: PageBackground;
+  /** 由哪個頁面複製而來（只做來源紀錄，之後兩邊互不影響） */
+  copiedFrom?: { slug: string; title: string; at: number };
 }
 
 /**

@@ -12,6 +12,8 @@ interface UserPagesValue {
   pages: UserPage[];
   getPage: (slug: string) => UserPage | undefined;
   createPage: (title: string, layer: Layer, meta?: PageMeta) => string;
+  /** 以既有頁面為底建立新頁面（內容由呼叫端準備好），回傳新 slug */
+  createCopy: (page: Omit<UserPage, 'slug' | 'createdAt' | 'builtin'>) => string;
   setPageMeta: (slug: string, meta: PageMeta) => void;
   /** 設定或移除（undefined）頁面底圖 */
   setBackground: (slug: string, background: PageBackground | undefined) => void;
@@ -59,6 +61,11 @@ export function UserPagesProvider({ children }: { children: ReactNode }) {
       createPage: (title, layer, meta = {}) => {
         const slug = newId('u');
         setPages((prev) => [...prev, { slug, title: title.trim() || '未命名頁面', blocks: [], createdAt: Date.now(), layer, sizes: 2, ...meta }]);
+        return slug;
+      },
+      createCopy: (page) => {
+        const slug = newId('u');
+        setPages((prev) => [...prev, { ...page, slug, createdAt: Date.now(), sizes: 2 }]);
         return slug;
       },
       renamePage: (slug, title) => patchPage(slug, (p) => ({ ...p, title })),
