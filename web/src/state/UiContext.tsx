@@ -12,6 +12,10 @@ interface UiValue {
   newPage: { groupId?: string } | null;
   openNewPage: (groupId?: string) => void;
   closeNewPage: () => void;
+  /** 「從 JSON 匯入頁面」對話框；groupId 為預選分類 */
+  importPage: { groupId?: string } | null;
+  openImport: (groupId?: string) => void;
+  closeImport: () => void;
   toast: string | null;
   showToast: (msg: string) => void;
 }
@@ -23,6 +27,9 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const [newPage, setNewPage] = useState<{ groupId?: string } | null>(null);
   const openNewPage = useCallback((groupId?: string) => setNewPage({ groupId }), []);
   const closeNewPage = useCallback(() => setNewPage(null), []);
+  const [importPage, setImportPage] = useState<{ groupId?: string } | null>(null);
+  const openImport = useCallback((groupId?: string) => setImportPage({ groupId }), []);
+  const closeImport = useCallback(() => setImportPage(null), []);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number>();
 
@@ -57,8 +64,8 @@ export function UiProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, toast, showToast }),
-    [sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, toast, showToast],
+    () => ({ sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, importPage, openImport, closeImport, toast, showToast }),
+    [sidebarCollapsed, toggleSidebar, kiosk, enterKiosk, exitKiosk, newPage, openNewPage, closeNewPage, importPage, openImport, closeImport, toast, showToast],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

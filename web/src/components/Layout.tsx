@@ -1,12 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import { useUi } from '../state/UiContext';
+import { ImportPageDialog } from './ImportPageDialog';
 import { NewPageDialog } from './NewPageDialog';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { CloseIcon } from './Icons';
 
 export function Layout() {
-  const { kiosk, exitKiosk, toast, newPage } = useUi();
+  const { kiosk, exitKiosk, toast, newPage, importPage } = useUi();
   return (
     <div className={`app ${kiosk ? 'app--kiosk' : ''}`}>
       {!kiosk && <Sidebar />}
@@ -22,6 +23,7 @@ export function Layout() {
         </button>
       )}
       {newPage && <NewPageDialog />}
+      {importPage && <ImportPageDialog />}
       <div className="toast-region" role="status" aria-live="polite">
         {toast && <div className="toast">{toast}</div>}
       </div>

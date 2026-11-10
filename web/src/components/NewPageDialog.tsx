@@ -11,7 +11,7 @@ import type { Layer } from '../types';
 const NEW_GROUP = '__new__';
 
 export function NewPageDialog() {
-  const { newPage, closeNewPage, showToast } = useUi();
+  const { newPage, closeNewPage, openImport, showToast } = useUi();
   const { groups, addGroup, addSlug } = useFavorites();
   const { createPage } = useUserPages();
   const navigate = useNavigate();
@@ -37,7 +37,10 @@ export function NewPageDialog() {
   return (
     <Modal title="新增頁面" size="sm" onClose={closeNewPage}>
       <form className="newpage" onSubmit={submit}>
-        <p className="newpage__hint">建立後會進入空白畫布，可以自由新增積木。</p>
+        <p className="newpage__hint">
+          建立後會進入空白畫布，可以自由新增積木。已經有頁面 JSON？
+          <button type="button" className="link-btn" onClick={() => { closeNewPage(); openImport(newPage?.groupId); }}>從 JSON 匯入</button>
+        </p>
         <fieldset className="layer-pick">
           <legend>頁面層級</legend>
           {(['duty', 'command'] as Layer[]).map((l) => (

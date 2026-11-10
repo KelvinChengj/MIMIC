@@ -100,6 +100,52 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 - **名稱、System、Phase、分類**：預設沿用原頁面（名稱加「（複本）」）；原頁面跨多個系統或廠區時需要自己選。
 - **指揮官頁**：燈號仍指向原本的值班情境頁，要連到新的值班頁請在複本裡逐一改選。
 
+### 頁面 JSON：匯出與匯入
+
+用 JSON 加速建頁：匯出現有頁面當範本，改一改（或請 AI 依格式產生）再匯入成新頁面。
+
+- **匯出**：任何積木畫布頁在檢視模式按 **Export**，可以**複製**或**下載 .json**（檔名 `mimic-<slug>.json`）。內建底圖只輸出代號（`builtin:…`）；上傳的底圖可勾選是否包含圖檔。
+- **匯入**：側欄「匯入 JSON」（或「新增頁面」對話框裡的「從 JSON 匯入」），貼上文字或選檔，立即檢查。通過後確認名稱、System、Phase、分類，建立成**新頁面**並進入編輯模式；不會覆蓋既有頁面。對話框有「載入範例」。
+
+格式（`version: 1`）：
+
+```json
+{
+  "format": "mimic.page",
+  "version": 1,
+  "page": {
+    "title": "F18P2 純水值班",
+    "layer": "duty",
+    "system": "超純水",
+    "phase": "F18P2",
+    "background": { "src": "builtin:f18p2-3f-cleanroom", "opacity": 1 },
+    "blocks": [
+      { "id": "title", "type": "text", "size": "M", "x": 24, "y": 24, "props": { "text": "F18P2 純水關鍵單元" } },
+      { "id": "pol", "type": "lamp", "title": "拋光", "size": "L", "x": 24, "y": 80,
+        "props": { "vtag": { "site": "f18p2", "name": "F18P2.UPW.POL.LAMP" } } }
+    ]
+  }
+}
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `page.title` | 必填，最多 40 字（超過截短） |
+| `page.layer` | 必填，`duty`（值班情境）或 `command`（戰情指揮官） |
+| `page.system`、`page.phase` | 選填；不在選項內會清掉，匯入時再選 |
+| `page.background` | 選填。`src` 只接受內建底圖 `builtin:<id>` 或內嵌圖檔 `data:image/png｜jpeg｜webp｜svg+xml`（1.5 MB 以內，需附 `width`、`height`）；**不接受外部網址** |
+| `blocks[].type` | `lamp`（只能在值班情境頁）、`duty`（只能在戰情指揮官頁）、`text` |
+| `blocks[].size` | `S`、`M`、`L`，不寫用預設 |
+| `blocks[].x`、`y` | 必填，0～10000 的數字（有底圖時是底圖像素座標） |
+| `blocks[].id` | 選填，英數字、`-`、`_`（會出現在下鑽網址）；沒寫、格式不對或重複時重新產生 |
+| `props` | `lamp`：`{ "vtag": { "site", "name" } }`（可不綁）；`duty`：`{ "page": "<值班情境頁的 slug>" }`；`text`：`{ "text": "…" }`（最多 400 字） |
+
+**檢查規則**（`src/lib/pageJson.ts` 的 `parsePageJson`）：
+
+- **不能匯入（錯誤）**：不是合法 JSON、`format`／`version` 不對（較新的版本會請你更新）、缺必填欄位、型別不對、積木放錯層、不認得的積木種類、積木超過 300 個、整份超過 3 MB、底圖來源不允許。錯誤會指出欄位，例如 `page.blocks[2]（RO 逆滲透）.x：必須是 0～10000 的數字`。
+- **可以匯入（提醒）**：找不到的 virtual tag（燈號顯示「無效」）、沒綁 virtual tag、值班情境燈號指向不存在或不是值班層的頁面、System／Phase 不在選項內、名稱或文字被截短、id 被重新產生。
+- **只取認得的欄位重新組出頁面**：多餘的欄位（例如 `slug`、`builtin`、`__proto__`）一律忽略，不會帶進頁面資料。
+
 ### 底圖（地圖型 MIMIC）
 
 編輯模式左側積木庫下方的「底圖」區可以**上傳圖檔**（PNG、JPG、SVG、WebP，展示版 1.5 MB 以內）或**套用範本**（無塵室示意圖、水平衡拓樸圖、高壓單線圖），並調整**底圖透明度**、更換或移除。
@@ -144,6 +190,7 @@ npm run build      # tsc 型別檢查 + 正式建置到 dist/
 
 ```
 src/catalog/catalog.ts  廠區、系統、模擬資料用的 InSQL tag、頁面目錄（含 Explore 資料與層級）
+src/lib/pageJson.ts     頁面 JSON 匯出（exportPage）與匯入檢查（parsePageJson）
 src/lib/fdm.ts          FDM / InSQL 資料來源（模擬）：virtual tag 主檔（廠區 × 系統整體燈號 + 子系統燈號）、fetchLamps、fetchVTagDetail。接真實 API 只需替換這兩個函式
 src/lib/status.ts       燈號代碼對照、InSQL tag 判定、彙整、規則文字（純函式，有測試）
 src/lib/blocks.ts       燈號積木綁的 virtual tag 與判定（有測試）

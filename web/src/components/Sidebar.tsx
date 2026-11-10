@@ -23,7 +23,7 @@ const isTopHalf = (e: DragEvent<HTMLElement>) => {
 };
 
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, openNewPage } = useUi();
+  const { sidebarCollapsed, toggleSidebar, openNewPage, openImport } = useUi();
   const fav = useFavorites();
   const { groups } = fav;
   const resolve = useResolvePage();
@@ -135,7 +135,10 @@ export function Sidebar() {
       <Link to="/explore" className={`explore-btn ${pathname === '/explore' ? 'is-active' : ''}`}>
         <SearchIcon size={16} /><span>Explore MIMIC</span><Chev />
       </Link>
-      <button className="newpage-btn" onClick={() => openNewPage()}><PlusIcon size={15} /> 新增頁面</button>
+      <div className="newpage-row">
+        <button className="newpage-btn" onClick={() => openNewPage()}><PlusIcon size={15} /> 新增頁面</button>
+        <button className="newpage-btn newpage-btn--side" onClick={() => openImport()} title="貼上或選擇頁面 JSON，建立成新頁面">匯入 JSON</button>
+      </div>
       {/* Virtual Tag 清單（/vtags）先從側欄隱藏；頁面與網址仍保留 */}
 
       <div className="fav-head">
