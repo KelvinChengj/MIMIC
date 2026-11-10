@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { saveTextFile } from '../lib/download';
 import { layerOf } from '../lib/pages';
 import { exportPage, stringifyPage } from '../lib/pageJson';
 import { pageMetaOf } from '../state/derived';
@@ -38,15 +39,13 @@ export function ExportPageDialog({ page, onClose }: { page: UserPage; onClose: (
       showToast(uploaded && withImage ? '無法自動複製，請改用下載' : '無法自動複製，已選取全文，請按 Ctrl/⌘ + C');
     }
   };
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mimic-${page.slug}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const [saving, setSaving] = useState(false);
+  const download = async () => {
+    setSaving(true);
+    const outcome = await saveTextFile(`mimic-${page.slug}.json`, text);
+    setSaving(false);
+    if (outcome === 'saved') showToast('已儲存 JSON 檔');
+    else if (outcome === 'declined') showToast('已取消下載');
   };
 
   return (
@@ -64,7 +63,7 @@ export function ExportPageDialog({ page, onClose }: { page: UserPage; onClose: (
         <div className="json-foot">
           <span className="json-foot__stat">{page.blocks.length} 個積木 · {kb(new Blob([text]).size)}</span>
           <button type="button" className="btn" onClick={onClose}>關閉</button>
-          <button type="button" className="btn" onClick={download}>下載 .json</button>
+          <button type="button" className="btn" onClick={download} disabled={saving}>下載 .json</button>
           <button type="button" className="btn btn--primary" onClick={copy}>複製</button>
         </div>
       </div>
